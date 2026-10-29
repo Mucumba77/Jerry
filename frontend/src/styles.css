@@ -123,7 +123,6 @@ p {
   height: 108px;
   overflow: hidden;
   border-radius: 8px;
-  background: #fff;
 }
 .brand-logo img {
   position: absolute;
@@ -131,6 +130,8 @@ p {
   width: 140%;
   height: 140%;
   object-fit: contain;
+  filter: invert(1) hue-rotate(180deg);
+  mix-blend-mode: screen;
 }
 .brand-mark {
   width: 39px;
