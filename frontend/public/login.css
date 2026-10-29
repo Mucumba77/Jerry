@@ -52,7 +52,7 @@ body {
   height: 132px;
   overflow: hidden;
   border-radius: 8px;
-  margin: 0 0 28px;
+  margin: 0 auto 28px;
 }
 .brand img {
   position: absolute;
