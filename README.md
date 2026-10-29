@@ -10,15 +10,15 @@ The Jerry Wiki explains installation, security, configuration, monitoring, SQL, 
 
 ## Choose a distribution
 
-All platform builds share Jerry version **2.1.1**. Select the WAR that matches your Tomcat family:
+All platform builds share Jerry version **2.1.2**. Select the WAR that matches your Tomcat family:
 
 | WAR | Target | Minimum Java | Servlet namespace |
 | --- | --- | --- | --- |
-| `jerry-2.1.1-tomcat85.war` | Tomcat 8.5 | 8 | `javax` |
-| `jerry-2.1.1-tomcat9.war` | Tomcat 9.0 | 8 | `javax` |
-| `jerry-2.1.1-tomcat100.war` | Tomcat 10.0 | 8 | `jakarta` |
-| `jerry-2.1.1-tomcat101.war` | Tomcat 10.1 | 11 | `jakarta` |
-| `jerry-2.1.1-tomcat11.war` | Tomcat 11.0 | 17 | `jakarta` |
+| `jerry-2.1.2-tomcat85.war` | Tomcat 8.5 | 8 | `javax` |
+| `jerry-2.1.2-tomcat9.war` | Tomcat 9.0 | 8 | `javax` |
+| `jerry-2.1.2-tomcat100.war` | Tomcat 10.0 | 8 | `jakarta` |
+| `jerry-2.1.2-tomcat101.war` | Tomcat 10.1 | 11 | `jakarta` |
+| `jerry-2.1.2-tomcat11.war` | Tomcat 11.0 | 17 | `jakarta` |
 
 Tomcat 8.5 and 10.0 have reached end of support; choose a supported Tomcat release where possible. The Jakarta builds are produced using Apache's Jakarta EE migration tool. Jerry uses Tomcat internals, so verify the intended patch level and providers in a staging environment before production deployment.
 
