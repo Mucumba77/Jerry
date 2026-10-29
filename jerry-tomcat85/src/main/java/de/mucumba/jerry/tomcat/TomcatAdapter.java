@@ -266,9 +266,26 @@ public final class TomcatAdapter implements DataSources, AutoCloseable {
   }
 
   public String resource(Context context, String path) throws IOException {
-    try (InputStream input = context.getServletContext().getResourceAsStream(path)) {
+    try (InputStream input =
+        context.getServletContext().getResourceAsStream(localResourcePath(path))) {
       return input == null ? null : readLimited(input, 2 * 1024 * 1024);
     }
+  }
+
+  /** Accept only absolute, normalized web application resource paths. */
+  static String localResourcePath(String path) {
+    if (path == null || !path.startsWith("/") || path.indexOf('\\') >= 0) {
+      throw new IllegalArgumentException("Ungültiger Anwendungspfad.");
+    }
+    for (String segment : path.substring(1).split("/", -1)) {
+      if (segment.isEmpty() || ".".equals(segment) || "..".equals(segment))
+        throw new IllegalArgumentException("Ungültiger Anwendungspfad.");
+      for (int i = 0; i < segment.length(); i++) {
+        if (Character.isISOControl(segment.charAt(i)))
+          throw new IllegalArgumentException("Ungültiger Anwendungspfad.");
+      }
+    }
+    return path;
   }
 
   private static String readLimited(InputStream input, int limit) throws IOException {
@@ -752,30 +769,48 @@ public final class TomcatAdapter implements DataSources, AutoCloseable {
   public DataSource resolve(String id) throws Exception {
     Source configuredSource = configured.get(id);
     if (configuredSource != null) return new ConfiguredDataSource(config, configuredSource.name);
-    String decoded;
-    try {
-      decoded = new String(Base64.getUrlDecoder().decode(id), StandardCharsets.UTF_8);
-    } catch (IllegalArgumentException exception) {
-      throw new IllegalArgumentException("Unbekannte Datenquelle.");
-    }
-    int newline = decoded.indexOf('\n');
-    if (newline < 0) throw new IllegalArgumentException("Ungültige Datenquelle.");
-    String app = decoded.substring(0, newline), name = decoded.substring(newline + 1);
+    // The request supplies only an identifier. Resolve the lookup name from the current
+    // container configuration, never by decoding a caller-controlled name for JNDI.
+    Object value = null;
     boolean registered = false;
-    for (Map<String, Object> source : list()) if (id.equals(source.get("id"))) registered = true;
-    if (!registered) throw new IllegalArgumentException("Datenquelle existiert nicht mehr.");
-    Object value;
-    if ("global".equals(app))
-      value = engine.getService().getServer().getGlobalNamingContext().lookup(name);
-    else {
-      Context context = context(app);
-      ClassLoader previous = context.bind(false, null);
-      try {
-        value = new InitialContext().lookup("java:comp/env/" + name);
-      } finally {
-        context.unbind(false, previous);
+    for (ContextResource resource :
+        engine.getService().getServer().getGlobalNamingResources().findResources()) {
+      if (isDataSource(resource.getType()) && id.equals(encode("global\n" + resource.getName()))) {
+        value =
+            engine
+                .getService()
+                .getServer()
+                .getGlobalNamingContext()
+                .lookup(localJndiName(resource.getName()));
+        registered = true;
+        break;
       }
     }
+    if (!registered) {
+      for (Context context : contexts()) {
+        String application = id(context);
+        for (ContextResource resource : context.getNamingResources().findResources()) {
+          if (isDataSource(resource.getType())
+              && id.equals(encode(application + "\n" + resource.getName()))) {
+            value = lookupApplicationDataSource(context, resource.getName());
+            registered = true;
+            break;
+          }
+        }
+        if (!registered) {
+          for (ContextResourceLink link : context.getNamingResources().findResourceLinks()) {
+            if (isDataSource(link.getType())
+                && id.equals(encode(application + "\n" + link.getName()))) {
+              value = lookupApplicationDataSource(context, link.getName());
+              registered = true;
+              break;
+            }
+          }
+        }
+        if (registered) break;
+      }
+    }
+    if (!registered) throw new IllegalArgumentException("Datenquelle existiert nicht mehr.");
     if (!(value instanceof DataSource))
       throw new IllegalArgumentException(
           "Diese Ressource ist keine lokale JDBC-Datenquelle. XA-Transaktionen sind im SQL-Client nicht vorgesehen.");
@@ -789,6 +824,32 @@ public final class TomcatAdapter implements DataSources, AutoCloseable {
       }
     }
     return source;
+  }
+
+  private Object lookupApplicationDataSource(Context context, String name) throws Exception {
+    String localName = localJndiName(name);
+    ClassLoader previous = context.bind(false, null);
+    try {
+      return new InitialContext().lookup("java:comp/env/" + localName);
+    } finally {
+      context.unbind(false, previous);
+    }
+  }
+
+  /** Reject URL-style and traversal names before resolving a registered local resource. */
+  static String localJndiName(String name) {
+    if (name == null || name.isEmpty() || name.indexOf(':') >= 0 || name.indexOf('\\') >= 0) {
+      throw new IllegalArgumentException("Ungültiger lokaler JNDI-Name.");
+    }
+    for (String segment : name.split("/", -1)) {
+      if (segment.isEmpty() || ".".equals(segment) || "..".equals(segment))
+        throw new IllegalArgumentException("Ungültiger lokaler JNDI-Name.");
+      for (int i = 0; i < segment.length(); i++) {
+        if (Character.isISOControl(segment.charAt(i)))
+          throw new IllegalArgumentException("Ungültiger lokaler JNDI-Name.");
+      }
+    }
+    return name;
   }
 
   @Override
@@ -1070,7 +1131,16 @@ public final class TomcatAdapter implements DataSources, AutoCloseable {
 
   public Map<String, Object> jspSource(String app, String path) throws IOException {
     Context context = context(app);
-    if (!jsps(app).contains(path)) throw new IllegalArgumentException("JSP existiert nicht.");
+    localResourcePath(path);
+    String registeredPath = null;
+    for (String candidate : jsps(app)) {
+      if (candidate.equals(path)) {
+        registeredPath = candidate;
+        break;
+      }
+    }
+    if (registeredPath == null) throw new IllegalArgumentException("JSP existiert nicht.");
+    path = registeredPath;
     String javaPath =
         "org/apache/jsp"
             + path.substring(0, path.lastIndexOf('/'))

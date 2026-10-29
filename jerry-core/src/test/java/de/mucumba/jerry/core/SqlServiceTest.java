@@ -260,6 +260,27 @@ class SqlServiceTest {
 
   @Test
   @SuppressWarnings("unchecked")
+  void metadataTreatsSqlLikeIdentifiersAsNamesRatherThanQueries() throws Exception {
+    String table = "T'; DROP TABLE SAMPLE; --";
+    try (Connection connection = source.getConnection()) {
+      connection
+          .createStatement()
+          .execute("CREATE TABLE \"" + table + "\" (\"odd%\" INT PRIMARY KEY)");
+    }
+    String id = open("alice");
+    Map<String, Object> result = service.metadata("alice", id, "PUBLIC", table, false);
+    List<Map<String, Object>> columns = (List<Map<String, Object>>) result.get("columns");
+    assertEquals(1, columns.size());
+    assertEquals("odd%", columns.get(0).get("COLUMN_NAME"));
+    assertEquals(1, ((List<Map<String, Object>>) result.get("primaryKeys")).size());
+    Map<String, Object> forged =
+        service.metadata("alice", id, "PUBLIC", "SAMPLE'; DROP TABLE SAMPLE;--", true);
+    assertTrue(((List<Map<String, Object>>) forged.get("columns")).isEmpty());
+    assertEquals(0, count());
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
   void configuredSchemaTakesPrecedenceOverUserAndEscapesWildcards() throws Exception {
     try (Connection connection = source.getConnection()) {
       connection.createStatement().execute("CREATE SCHEMA APP_ONE");

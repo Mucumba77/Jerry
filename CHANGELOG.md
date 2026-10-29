@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Resolve JNDI data sources from current Tomcat resource declarations, rejecting URL-style or traversal names.
+- Validate application resource paths and restrict JSP source access to discovered JSP files.
+- Add regression checks for forged JNDI names, resource traversal and SQL-like quoted metadata identifiers.
+
 ## 2.1.0
 
 - Added SQL completion for tables, columns, common aliases and selected dialect-specific functions. Column metadata is loaded only when needed and cached per connection and schema.
