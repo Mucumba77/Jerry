@@ -15,6 +15,7 @@ if ($LASTEXITCODE) { throw 'Fixture compilation failed' }
 Copy-Item -LiteralPath $sdk -Destination "$fixture/WEB-INF/lib/jerry-instrumentation.jar" -Force
 [IO.File]::WriteAllText("$fixture/WEB-INF/web.xml", '<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee" version="3.1"><servlet><servlet-name>fixture</servlet-name><servlet-class>de.mucumba.jerry.testenv.PlatformFixture</servlet-class></servlet><servlet-mapping><servlet-name>fixture</servlet-name><url-pattern>/api</url-pattern></servlet-mapping></web-app>', [Text.UTF8Encoding]::new($false))
 [IO.File]::WriteAllText("$fixture/META-INF/context.xml", '<Context><ResourceLink name="jdbc/JerryDemo" global="jdbc/JerryDemo" type="javax.sql.DataSource"/></Context>', [Text.UTF8Encoding]::new($false))
+[IO.File]::WriteAllText("$fixture/index.jsp", '<%@ page contentType="text/plain" %>Jerry fixture JSP', [Text.UTF8Encoding]::new($false))
 $fixtureWar=Join-Path $platforms 'fixture-javax.war'
 Push-Location $fixture
 try { & "$java8/bin/jar.exe" cf $fixtureWar .; if($LASTEXITCODE){throw 'Fixture packaging failed'} } finally { Pop-Location }

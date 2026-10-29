@@ -16,7 +16,21 @@ async function main(){
   await request('/jerry/');const login=await request('/jerry/j_security_check',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({j_username:'platform-admin',j_password:password})});assert.equal(login.status,303);
   const me=await api('/me');csrf=me.csrf;assert.equal(me.version,process.env.JERRY_PROJECT_VERSION || require('../../frontend/package.json').version);assert.match(me.server.server,new RegExp('Apache Tomcat/'+process.env.JERRY_TEST_VERSION.replaceAll('.','\\.')));
   const apps=await api('/applications'), fixture=apps.find(a=>a.path==='/fixture');assert.ok(fixture?.running);const endpoint=`/applications/${fixture.id}/monitoring`;
+  const jsp=await api(`/applications/${fixture.id}/jsps?path=${encodeURIComponent('/index.jsp')}`);
+  assert.match(jsp.source,/Jerry fixture JSP/,'A registered JSP must remain readable');
+  for (const scope of ['global', fixture.id]) {
+    for (const name of ['ldap://127.0.0.1:1/evil', 'jdbc/../evil']) {
+      const forged=Buffer.from(`${scope}\n${name}`).toString('base64url');
+      assert.equal((await request(`/jerry/api/datasources/${forged}`)).status,400,'Unregistered JNDI names must be rejected');
+    }
+  }
+  for (const path of ['/../WEB-INF/web.xml','/WEB-INF/web.xml','/views/../../WEB-INF/web.xml']) {
+    assert.equal((await request(`/jerry/api/applications/${fixture.id}/jsps?path=${encodeURIComponent(path)}`)).status,400,'Only listed JSP files may be read');
+  }
   const sources=await api('/datasources?metrics=true'), source=sources.find(s=>s.name==='jdbc/JerryDemo');assert.ok(source?.pool?.max===12,JSON.stringify(sources));
+  const matching=sources.filter(s=>s.name==='jdbc/JerryDemo');
+  assert.ok(matching.length>=2,'Both the global resource and the application ResourceLink must be listed');
+  for (const candidate of matching) assert.ok(await api(`/datasources/${candidate.id}`));
   const session=await api('/sql',{source:source.id});assert.equal(session.autoCommit,false);
   const columns=await api(`/sql/${session.id}/metadata?schema=INFORMATION_SCHEMA&table=TABLES&columnsOnly=true`);
   assert.ok(columns.columns.some(column=>column.COLUMN_NAME==='TABLE_NAME'));
