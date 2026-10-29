@@ -21,7 +21,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Build and test
         run: |
-          test "$GITHUB_REF_NAME" = "v$(node -p "require('./frontend/package.json').version")"
+          test "$GITHUB_REF_NAME" = "v$(node scripts/version.cjs)"
           sh build.sh
           node --test scripts/testenv/history-charts.test.mjs scripts/testenv/connector-traffic.test.mjs scripts/testenv/i18n.test.mjs scripts/testenv/sql-completion.test.mjs
       - name: Publish release assets
@@ -31,6 +31,7 @@ jobs:
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
             echo "Release already exists; preserving its published assets."
           else
-            gh release create "$GITHUB_REF_NAME" dist/jerry-2.1.0-tomcat*.war dist/jerry-2.1.0-tomcat*.war.sha256 dist/jerry-instrumentation-2.1.0-*.jar --generate-notes
+            version=$(node scripts/version.cjs)
+            gh release create "$GITHUB_REF_NAME" dist/jerry-"$version"-tomcat*.war dist/jerry-"$version"-tomcat*.war.sha256 dist/jerry-instrumentation-"$version"-*.jar --generate-notes
           fi
 

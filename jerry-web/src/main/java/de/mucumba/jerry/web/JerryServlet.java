@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import de.mucumba.jerry.core.Json;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
@@ -14,6 +15,7 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -28,6 +30,16 @@ public final class JerryServlet extends HttpServlet implements ContainerServlet 
   private static final long serialVersionUID = 1L;
   private transient Wrapper wrapper;
   private transient JerryRuntime runtime;
+
+  private static String buildVersion() {
+    Properties properties = new Properties();
+    try (InputStream input = JerryServlet.class.getResourceAsStream("/jerry-build.properties")) {
+      if (input != null) properties.load(input);
+    } catch (IOException ignored) {
+      return "unknown";
+    }
+    return properties.getProperty("version", "unknown");
+  }
 
   @Override
   public Wrapper getWrapper() {
@@ -167,7 +179,7 @@ public final class JerryServlet extends HttpServlet implements ContainerServlet 
                 "name",
                 "Jerry",
                 "version",
-                "2.1.0",
+                buildVersion(),
                 "user",
                 user(request),
                 "csrf",

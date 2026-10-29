@@ -7,7 +7,7 @@
     <dependency><groupId>org.apache.tomcat</groupId><artifactId>tomcat-catalina</artifactId><version>${tomcat.version}</version><scope>provided</scope></dependency>
     <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><scope>test</scope></dependency>
   </dependencies>
-  <build><finalName>jerry</finalName><plugins><plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-war-plugin</artifactId><configuration>
+  <build><finalName>jerry</finalName><resources><resource><directory>src/main/resources</directory><filtering>true</filtering></resource></resources><plugins><plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-war-plugin</artifactId><configuration>
     <webResources><resource><directory>../frontend/dist</directory></resource><resource><directory>../jerry-instrumentation/target</directory><targetPath>instrumentation</targetPath><includes><include>jerry-instrumentation-${project.version}.jar</include></includes></resource><resource><directory>..</directory><targetPath>META-INF</targetPath><includes><include>LICENSE</include><include>NOTICE.md</include></includes></resource></webResources>
     <archive><manifestEntries><Implementation-Title>Jerry</Implementation-Title><Implementation-Version>${project.version}</Implementation-Version><Build-Jdk-Spec>8</Build-Jdk-Spec></manifestEntries></archive>
   </configuration></plugin></plugins></build>

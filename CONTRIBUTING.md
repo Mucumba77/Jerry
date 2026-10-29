@@ -7,3 +7,9 @@
 5. Do not commit credentials, live logs, database files, `.tools`, generated WARs or local IDE settings. Third-party assets and dependencies must retain their notices and licenses.
 
 Please describe the observed problem, the effect of the change, supported platform versions, and the tests run in each pull request.
+
+Read the [Code of Conduct](CODE_OF_CONDUCT.md), [support information](SUPPORT.md) and [roadmap](ROADMAP.md). Use the issue forms for bugs and proposals; report security problems privately as described in [SECURITY.md](SECURITY.md). Compatibility tests cover representative versions and fixtures, not every provider combination or production workload.
+
+## Versioning a release
+
+The root Maven project version is the source used for distribution names and the runtime version. Use Maven's versions plugin to update the reactor and its parent references together, then update `frontend/package.json` and `frontend/package-lock.json` to the same version. Run `node scripts/version.cjs` to reject mismatches before building. Update the changelog and release documentation, run the full build and applicable platform tests, and create a matching `vX.Y.Z` tag only after review. The release workflow verifies the tag against the project version.

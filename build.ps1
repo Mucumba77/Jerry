@@ -1,6 +1,8 @@
 param([switch]$SkipChecks)
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
+& node scripts/version.cjs | Out-Null
+if ($LASTEXITCODE) { throw 'Project versions are inconsistent.' }
 if (-not $env:JAVA_HOME) {
   $localJdk = Get-ChildItem "$PSScriptRoot\.tools\java8" -Directory -ErrorAction SilentlyContinue | Select-Object -First 1
   if ($localJdk) { $env:JAVA_HOME = $localJdk.FullName }

@@ -4,6 +4,8 @@ Jerry is a self-hosted administration and monitoring console for Apache Tomcat. 
 
 The Jerry Wiki explains installation, security, configuration, monitoring, SQL, troubleshooting and development: [English](https://github.com/Mucumba77/Jerry/wiki/EN-Home) | [Deutsch](https://github.com/Mucumba77/Jerry/wiki).
 
+[![Build](https://github.com/Mucumba77/Jerry/actions/workflows/build.yml/badge.svg)](https://github.com/Mucumba77/Jerry/actions/workflows/build.yml) [![CodeQL](https://github.com/Mucumba77/Jerry/actions/workflows/codeql.yml/badge.svg)](https://github.com/Mucumba77/Jerry/actions/workflows/codeql.yml)
+
 ## Choose a distribution
 
 All platform builds share Jerry version **2.1.0**. Select the WAR that matches your Tomcat family:
@@ -71,6 +73,8 @@ The source is organized into `jerry-core`, `jerry-tomcat85` (container integrati
 Use Tomcat roles to separate viewer, operator, SQL and administrator access. JDBC read-only access requires a database account that is actually restricted by the database; JDBC's advisory read-only flag is not a security boundary. Some actions, including deployment and thread interruption, affect live applications. Additional application monitoring and database statistics have overhead that depends on the workload.
 
 See [SECURITY.md](SECURITY.md), [CONTRIBUTING.md](CONTRIBUTING.md), [NOTICE.md](NOTICE.md) and the documentation directory. The test environment in [docs/TESTUMGEBUNG.md](docs/TESTUMGEBUNG.md) is isolated and uses local fixture credentials; never reuse them for production.
+
+For help and feature proposals see [SUPPORT.md](SUPPORT.md) and [ROADMAP.md); contributions follow the [Code of Conduct](CODE_OF_CONDUCT.md). Automated tests cover representative platforms and fixtures, not every provider combination or production workload.
 
 ## License
 

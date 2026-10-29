@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 cd "$(dirname "$0")"
+node scripts/version.cjs >/dev/null
 : "${JAVA_HOME:?Please set JAVA_HOME to a JDK 8 installation}"
 export PATH="$JAVA_HOME/bin:$PATH"
 (cd frontend && npm ci --no-audit --no-fund && npm run build)

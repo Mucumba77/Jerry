@@ -1,5 +1,7 @@
 name: Jerry WAR
 on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -15,9 +17,56 @@ jobs:
           node-version: '22'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - run: sh build.sh
+      - run: node scripts/version.cjs && sh build.sh
       - run: node --test scripts/testenv/history-charts.test.mjs scripts/testenv/connector-traffic.test.mjs scripts/testenv/i18n.test.mjs scripts/testenv/sql-completion.test.mjs
       - uses: actions/upload-artifact@v4
         with:
-          name: jerry-2.1.0-distributions
+          name: jerry-distributions
           path: dist/
+  platform:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { version: '8.5.100', family: tomcat85, java: '8', browser: '1' }
+          - { version: '9.0.123', family: tomcat9, java: '8', browser: '0' }
+          - { version: '10.0.27', family: tomcat100, java: '8', browser: '0' }
+          - { version: '10.1.61', family: tomcat101, java: '11', browser: '0' }
+          - { version: '11.0.27', family: tomcat11, java: '17', browser: '0' }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+          cache: maven
+      - name: Remember Java 8
+        run: echo "JAVA8_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: jerry-distributions
+          path: dist
+      - name: Download Jakarta migration tool
+        if: startsWith(matrix.family, 'tomcat10') || matrix.family == 'tomcat11'
+        run: JAVA_HOME="$JAVA8_HOME" mvn -N -B -ntp org.apache.maven.plugins:maven-dependency-plugin:3.8.1:copy -Dartifact=org.apache.tomcat:jakartaee-migration:1.0.13:jar:shaded "-DoutputDirectory=$GITHUB_WORKSPACE/.tools" -Dmdep.stripVersion=true
+      - name: Install browser for SQL completion test
+        if: matrix.browser == '1'
+        run: |
+          npm install --prefix "$RUNNER_TEMP/jerry-browser" --no-save playwright@1.55.1
+          "$RUNNER_TEMP/jerry-browser/node_modules/.bin/playwright" install --with-deps chromium
+          echo "NODE_PATH=$RUNNER_TEMP/jerry-browser/node_modules" >> "$GITHUB_ENV"
+      - name: Test deployed application
+        env:
+          TOMCAT_VERSION: ${{ matrix.version }}
+          TOMCAT_FAMILY: ${{ matrix.family }}
+          JERRY_TEST_BROWSER: ${{ matrix.browser }}
+        run: bash scripts/testenv/platform-ci.sh

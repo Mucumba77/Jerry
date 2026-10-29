@@ -68,7 +68,7 @@ async function main() {
       assert.ok(!JSON.stringify(captured.telemetry.details).includes('JERRY_MISSING_TEST_TABLE'));
       const expired=await until(get,v=>v.profile.mode==='EXTENDED',13000);assert.equal(expired.telemetry.details.length,0);
     });
-    await check('Adapter JAR is downloadable',async()=> { const res=await admin.request('/jerry/instrumentation/jerry-instrumentation-2.1.0.jar'); assert.equal(res.status,200); const buf=Buffer.from(await res.arrayBuffer());assert.equal(buf.subarray(0,2).toString(),'PK'); });
+    await check('Adapter JAR is downloadable',async()=> { const res=await admin.request(`/jerry/instrumentation/jerry-instrumentation-${require('../../frontend/package.json').version}.jar`); assert.equal(res.status,200); const buf=Buffer.from(await res.arrayBuffer());assert.equal(buf.subarray(0,2).toString(),'PK'); });
   } finally { await admin.post('/alerts',original);await admin.post(endpoint,{mode:previous}); report.finished=new Date().toISOString(); fs.writeFileSync(path.join(__dirname,'../../.tools/jerry-testenv/new-monitoring-report.json'),JSON.stringify(report,null,2)); }
 }
 main().catch(e=>{console.error(e.stack);process.exitCode=1;});
