@@ -929,5 +929,6 @@
   "Nicht ermittelbar": "Non può essere determinato",
   "JDBC-Verbindung": "Connessione JDBC",
   "JDBC-Katalog": "Catalogo JDBC",
-  "Passendes Benutzerschema (Fallback)": "Schema utente corrispondente (fallback)"
+  "Passendes Benutzerschema (Fallback)": "Schema utente corrispondente (fallback)",
+  "Strg+Leertaste: Vervollständigen": "Ctrl+Spazio: completamento"
 }

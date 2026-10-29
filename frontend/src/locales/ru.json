@@ -929,5 +929,6 @@
   "Nicht ermittelbar": "Невозможно определить",
   "JDBC-Verbindung": "JDBC-соединение",
   "JDBC-Katalog": "Каталог JDBC",
-  "Passendes Benutzerschema (Fallback)": "Соответствующая пользовательская схема (резервный вариант)"
+  "Passendes Benutzerschema (Fallback)": "Соответствующая пользовательская схема (резервный вариант)",
+  "Strg+Leertaste: Vervollständigen": "Ctrl+Пробел: автодополнение"
 }

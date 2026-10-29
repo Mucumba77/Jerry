@@ -929,5 +929,6 @@
   "Nicht ermittelbar": "لا يمكن تحديدها",
   "JDBC-Verbindung": "اتصال JDBC",
   "JDBC-Katalog": "كتالوج JDBC",
-  "Passendes Benutzerschema (Fallback)": "مطابقة مخطط المستخدم (الاحتياطي)"
+  "Passendes Benutzerschema (Fallback)": "مطابقة مخطط المستخدم (الاحتياطي)",
+  "Strg+Leertaste: Vervollständigen": "Ctrl+مسافة: الإكمال التلقائي"
 }

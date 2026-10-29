@@ -167,7 +167,7 @@ public final class JerryServlet extends HttpServlet implements ContainerServlet 
                 "name",
                 "Jerry",
                 "version",
-                "2.0.0",
+                "2.1.0",
                 "user",
                 user(request),
                 "csrf",
@@ -377,7 +377,11 @@ public final class JerryServlet extends HttpServlet implements ContainerServlet 
         send(
             response,
             runtime.sql.metadata(
-                owner(request), id, request.getParameter("schema"), request.getParameter("table")));
+                owner(request),
+                id,
+                request.getParameter("schema"),
+                request.getParameter("table"),
+                "true".equals(request.getParameter("columnsOnly"))));
         return;
       }
       if ("results".equals(parts[2]) && parts.length >= 4) {

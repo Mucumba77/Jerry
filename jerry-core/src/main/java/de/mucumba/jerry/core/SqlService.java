@@ -711,6 +711,12 @@ public final class SqlService implements AutoCloseable {
   /** Reads JDBC metadata; filtering by schema does not change the connection's current schema. */
   public Map<String, Object> metadata(String owner, String id, String schema, String table)
       throws Exception {
+    return metadata(owner, id, schema, table, false);
+  }
+
+  /** Reads only the requested table's columns when completion does not need index details. */
+  public Map<String, Object> metadata(
+      String owner, String id, String schema, String table, boolean columnsOnly) throws Exception {
     Workspace workspace = owned(owner, id);
     if (!workspace.lock.tryLock()) throw new IllegalStateException("Verbindung beschäftigt.");
     try {
@@ -732,6 +738,13 @@ public final class SqlService implements AutoCloseable {
               workspace.connection.getTransactionIsolation(),
               "ddlCommits",
               metadata.dataDefinitionCausesTransactionCommit());
+      try {
+        result.put("storesUpperCaseIdentifiers", metadata.storesUpperCaseIdentifiers());
+        result.put("storesLowerCaseIdentifiers", metadata.storesLowerCaseIdentifiers());
+      } catch (SQLException | AbstractMethodError ignored) {
+        // Some JDBC drivers do not expose identifier casing; the editor uses a conservative
+        // fallback.
+      }
       boolean catalogs = "mysql".equals(workspace.dialect) || "mariadb".equals(workspace.dialect);
       String catalog = workspace.connection.getCatalog();
       String currentSchema = null;
@@ -801,6 +814,7 @@ public final class SqlService implements AutoCloseable {
                 selectedCatalog, schemaPattern, escapePattern(metadata, table), null)) {
           result.put("columns", metadataRows(rows));
         }
+        if (columnsOnly) return result;
         try (ResultSet rows =
             metadata.getPrimaryKeys(selectedCatalog, catalogs ? null : selectedSchema, table)) {
           result.put("primaryKeys", metadataRows(rows));

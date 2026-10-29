@@ -929,5 +929,6 @@
   "Nicht ermittelbar": "Cannot be determined",
   "JDBC-Verbindung": "JDBC connection",
   "JDBC-Katalog": "JDBC catalog",
-  "Passendes Benutzerschema (Fallback)": "Matching user schema (fallback)"
+  "Passendes Benutzerschema (Fallback)": "Matching user schema (fallback)",
+  "Strg+Leertaste: Vervollständigen": "Ctrl+Space: autocomplete"
 }

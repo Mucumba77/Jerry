@@ -1,12 +1,12 @@
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $settings = Get-Content "$projectRoot/.tools/jerry-testenv/environment.json" -Raw | ConvertFrom-Json
-$target = Join-Path $projectRoot '.tools/jerry-testenv/framework-2.0.0'
+$target = Join-Path $projectRoot '.tools/jerry-testenv/framework-2.1.0'
 New-Item -ItemType Directory -Force "$target/WEB-INF/lib", "$target/WEB-INF/classes" | Out-Null
 $env:JAVA_HOME = $settings.javaHome
 & "$projectRoot/.tools/apache-maven-3.9.9/bin/mvn.cmd" -B -ntp -f "$PSScriptRoot/framework-pom.xml" org.apache.maven.plugins:maven-dependency-plugin:3.8.1:copy-dependencies "-DoutputDirectory=$target/WEB-INF/lib"
 if ($LASTEXITCODE) { throw 'Framework fixture dependencies failed' }
-Copy-Item "$projectRoot/jerry-instrumentation/target/jerry-instrumentation-2.0.0.jar" "$target/WEB-INF/lib/jerry-instrumentation-2.0.0.jar" -Force
+Copy-Item "$projectRoot/jerry-instrumentation/target/jerry-instrumentation-2.1.0.jar" "$target/WEB-INF/lib/jerry-instrumentation-2.1.0.jar" -Force
 $fixtureClasspath = "$($settings.tomcatHome)/lib/servlet-api.jar;$target/WEB-INF/lib/*"
 & "$($settings.javaHome)/bin/javac.exe" -encoding UTF-8 -source 1.8 -target 1.8 -cp $fixtureClasspath -d "$target/WEB-INF/classes" "$PSScriptRoot/FrameworkFixture.java"
 if ($LASTEXITCODE) { throw 'Framework fixture compilation failed' }

@@ -21,8 +21,10 @@ import {
   MSSQL,
   PLSQL,
   StandardSQL,
+  keywordCompletionSource,
 } from "@codemirror/lang-sql";
 import { autocompletion, completionKeymap } from "@codemirror/autocomplete";
+import { sqlCompletionSource, type CompletionCatalog } from "./sqlCompletion";
 import {
   bracketMatching,
   syntaxHighlighting,
@@ -120,19 +122,21 @@ export default function Editor({
   onExecute,
   onExecuteAll,
   dialect = "standard",
-  schema = {},
+  catalog,
 }: {
   value: string;
   onChange: (value: string) => void;
   onExecute: (sql: string) => void;
   onExecuteAll: () => void;
   dialect?: string;
-  schema?: Record<string, string[]>;
+  catalog: CompletionCatalog;
 }) {
   const element = useRef<HTMLDivElement>(null),
     view = useRef<EditorView | null>(null);
   const callbacks = useRef({ onChange, onExecute, onExecuteAll });
   callbacks.current = { onChange, onExecute, onExecuteAll };
+  const completionCatalog = useRef(catalog);
+  completionCatalog.current = catalog;
   useEffect(() => {
     if (!element.current) return;
     const language =
@@ -156,8 +160,13 @@ export default function Editor({
           drawSelection(),
           history(),
           bracketMatching(),
-          sql({ dialect: language, schema }),
-          autocompletion(),
+          sql({ dialect: language }),
+          autocompletion({
+            override: [
+              keywordCompletionSource(language, true),
+              sqlCompletionSource(() => completionCatalog.current),
+            ],
+          }),
           syntaxHighlighting(
             HighlightStyle.define([
               {
@@ -244,7 +253,7 @@ export default function Editor({
       view.current?.destroy();
       view.current = null;
     };
-  }, [dialect, JSON.stringify(schema)]);
+  }, [dialect]);
   useEffect(() => {
     const editor = view.current;
     if (editor && value !== editor.state.doc.toString())

@@ -929,5 +929,6 @@
   "Nicht ermittelbar": "特定できない",
   "JDBC-Verbindung": "JDBC接続",
   "JDBC-Katalog": "JDBCカタログ",
-  "Passendes Benutzerschema (Fallback)": "一致するユーザー スキーマ (フォールバック)"
+  "Passendes Benutzerschema (Fallback)": "一致するユーザー スキーマ (フォールバック)",
+  "Strg+Leertaste: Vervollständigen": "Ctrl+スペース：コード補完"
 }

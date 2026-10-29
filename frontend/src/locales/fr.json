@@ -929,5 +929,6 @@
   "Nicht ermittelbar": "Ne peut être déterminé",
   "JDBC-Verbindung": "Connexion JDBC",
   "JDBC-Katalog": "Catalogue JDBC",
-  "Passendes Benutzerschema (Fallback)": "Schéma utilisateur correspondant (remplacement)"
+  "Passendes Benutzerschema (Fallback)": "Schéma utilisateur correspondant (remplacement)",
+  "Strg+Leertaste: Vervollständigen": "Ctrl+Espace : compléter"
 }

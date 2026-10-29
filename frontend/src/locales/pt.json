@@ -929,5 +929,6 @@
   "Nicht ermittelbar": "Não pode ser determinado",
   "JDBC-Verbindung": "Conexão JDBC",
   "JDBC-Katalog": "Catálogo JDBC",
-  "Passendes Benutzerschema (Fallback)": "Esquema de usuário correspondente (substituto)"
+  "Passendes Benutzerschema (Fallback)": "Esquema de usuário correspondente (substituto)",
+  "Strg+Leertaste: Vervollständigen": "Ctrl+Espaço: preenchimento automático"
 }

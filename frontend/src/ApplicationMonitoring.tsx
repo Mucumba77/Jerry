@@ -250,7 +250,7 @@ export function ApplicationMonitoring({
             )}
           </p>
           <p>
-            <a href="instrumentation/jerry-instrumentation-2.0.0.jar" download>
+            <a href="instrumentation/jerry-instrumentation-2.1.0.jar" download>
               {t("Adapter-JAR herunterladen")}
             </a>
             {/Apache Tomcat\/(10|11)\./.test(user.server?.server || "") && (
@@ -258,7 +258,7 @@ export function ApplicationMonitoring({
                 {" "}
                 ·{" "}
                 <a
-                  href="instrumentation/jerry-instrumentation-2.0.0-legacy-jms.jar"
+                  href="instrumentation/jerry-instrumentation-2.1.0-legacy-jms.jar"
                   download
                 >
                   {t("Adapter für älteres javax.jms herunterladen")}

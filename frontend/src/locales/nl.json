@@ -929,5 +929,6 @@
   "Nicht ermittelbar": "Kan niet worden vastgesteld",
   "JDBC-Verbindung": "JDBC-verbinding",
   "JDBC-Katalog": "JDBC-catalogus",
-  "Passendes Benutzerschema (Fallback)": "Overeenkomend gebruikersschema (fallback)"
+  "Passendes Benutzerschema (Fallback)": "Overeenkomend gebruikersschema (fallback)",
+  "Strg+Leertaste: Vervollständigen": "Ctrl+Spatie: aanvullen"
 }

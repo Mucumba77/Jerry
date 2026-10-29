@@ -929,5 +929,6 @@
   "Nicht ermittelbar": "无法确定",
   "JDBC-Verbindung": "JDBC连接",
   "JDBC-Katalog": "JDBC目录",
-  "Passendes Benutzerschema (Fallback)": "匹配用户模式（后备）"
+  "Passendes Benutzerschema (Fallback)": "匹配用户模式（后备）",
+  "Strg+Leertaste: Vervollständigen": "Ctrl+空格：自动补全"
 }

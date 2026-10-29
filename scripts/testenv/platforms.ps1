@@ -7,7 +7,7 @@ $java17 = (Get-ChildItem "$platforms/java17" -Directory | Select-Object -First 1
 $fixture = Join-Path $platforms 'fixture-src'
 New-Item -ItemType Directory -Force "$fixture/WEB-INF/classes", "$fixture/WEB-INF/lib", "$fixture/META-INF" | Out-Null
 $servlet = Join-Path $root '.tools/apache-tomcat-8.5.100/lib/servlet-api.jar'
-$sdk = Join-Path $root 'dist/jerry-instrumentation-2.0.0-javax.jar'
+$sdk = Join-Path $root 'dist/jerry-instrumentation-2.1.0-javax.jar'
 & "$java8/bin/javac.exe" -encoding UTF-8 -source 8 -target 8 -cp "$servlet;$sdk" -d "$fixture/WEB-INF/classes" "$PSScriptRoot/PlatformFixture.java"
 if ($LASTEXITCODE) { throw 'Fixture compilation failed' }
 Copy-Item -LiteralPath $sdk -Destination "$fixture/WEB-INF/lib/jerry-instrumentation.jar" -Force
@@ -33,9 +33,9 @@ foreach($target in $targets) {
   $base=Join-Path $platforms "base-$($target.family)"
   New-Item -ItemType Directory -Force "$base/conf", "$base/lib", "$base/logs", "$base/temp", "$base/webapps", "$base/work", "$base/data" | Out-Null
   Copy-Item -LiteralPath "$tomcatHome/conf/web.xml", "$tomcatHome/conf/context.xml", "$tomcatHome/conf/catalina.properties", "$tomcatHome/conf/logging.properties" -Destination "$base/conf" -Force
-  $fixtureLibraries = if(Test-Path "$root/.tools/jerry-testenv/framework-2.0.0/WEB-INF/lib/h2-2.2.224.jar") { "$root/.tools/jerry-testenv/framework-2.0.0/WEB-INF/lib" } else { "$root/.tools/jerry-testenv/framework/WEB-INF/lib" }
+  $fixtureLibraries = if(Test-Path "$root/.tools/jerry-testenv/framework-2.1.0/WEB-INF/lib/h2-2.2.224.jar") { "$root/.tools/jerry-testenv/framework-2.1.0/WEB-INF/lib" } else { "$root/.tools/jerry-testenv/framework/WEB-INF/lib" }
   Copy-Item -LiteralPath "$fixtureLibraries/h2-2.2.224.jar" -Destination "$base/lib" -Force
-  Copy-Item -LiteralPath "$root/dist/jerry-2.0.0-$($target.family).war" -Destination "$base/webapps/jerry.war" -Force
+  Copy-Item -LiteralPath "$root/dist/jerry-2.1.0-$($target.family).war" -Destination "$base/webapps/jerry.war" -Force
   Copy-Item -LiteralPath $target.fixture -Destination "$base/webapps/fixture.war" -Force
   $password=[guid]::NewGuid().ToString('N'); $shutdownToken=[guid]::NewGuid().ToString('N')
   $users="<tomcat-users><role rolename=`"jerry-admin`"/><user username=`"platform-admin`" password=`"$password`" roles=`"jerry-admin`"/></tomcat-users>"

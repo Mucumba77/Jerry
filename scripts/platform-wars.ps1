@@ -14,20 +14,20 @@ $baseWar = Join-Path $projectRoot 'jerry-web/target/jerry.war'
 $jakartaWar = Join-Path $working 'jerry-jakarta.war'
 & $java -jar $migrationTool '-profile=TOMCAT' $baseWar $jakartaWar
 if ($LASTEXITCODE) { throw 'Jakarta WAR migration failed.' }
-$sdk = Join-Path $projectRoot 'jerry-instrumentation/target/jerry-instrumentation-2.0.0.jar'
-& $java -jar $migrationTool '-profile=EE' $sdk (Join-Path $distribution 'jerry-instrumentation-2.0.0-jakarta.jar')
+$sdk = Join-Path $projectRoot 'jerry-instrumentation/target/jerry-instrumentation-2.1.0.jar'
+& $java -jar $migrationTool '-profile=EE' $sdk (Join-Path $distribution 'jerry-instrumentation-2.1.0-jakarta.jar')
 if ($LASTEXITCODE) { throw 'Jakarta instrumentation migration failed.' }
-& $java -jar $migrationTool '-profile=TOMCAT' $sdk (Join-Path $distribution 'jerry-instrumentation-2.0.0-jakarta-servlet-javax-jms.jar')
+& $java -jar $migrationTool '-profile=TOMCAT' $sdk (Join-Path $distribution 'jerry-instrumentation-2.1.0-jakarta-servlet-javax-jms.jar')
 if ($LASTEXITCODE) { throw 'Legacy JMS instrumentation migration failed.' }
 $instrumentationStage = Join-Path $working 'jakarta-instrumentation/instrumentation'
 New-Item -ItemType Directory -Force $instrumentationStage | Out-Null
-Copy-Item -LiteralPath (Join-Path $distribution 'jerry-instrumentation-2.0.0-jakarta.jar') -Destination (Join-Path $instrumentationStage 'jerry-instrumentation-2.0.0.jar') -Force
-Copy-Item -LiteralPath (Join-Path $distribution 'jerry-instrumentation-2.0.0-jakarta-servlet-javax-jms.jar') -Destination (Join-Path $instrumentationStage 'jerry-instrumentation-2.0.0-legacy-jms.jar') -Force
+Copy-Item -LiteralPath (Join-Path $distribution 'jerry-instrumentation-2.1.0-jakarta.jar') -Destination (Join-Path $instrumentationStage 'jerry-instrumentation-2.1.0.jar') -Force
+Copy-Item -LiteralPath (Join-Path $distribution 'jerry-instrumentation-2.1.0-jakarta-servlet-javax-jms.jar') -Destination (Join-Path $instrumentationStage 'jerry-instrumentation-2.1.0-legacy-jms.jar') -Force
 & (Join-Path $env:JAVA_HOME 'bin/jar.exe') uf $jakartaWar -C (Split-Path $instrumentationStage -Parent) instrumentation
 if ($LASTEXITCODE) { throw 'Could not include Jakarta instrumentation artifacts in the WAR.' }
-Copy-Item -LiteralPath $sdk -Destination (Join-Path $distribution 'jerry-instrumentation-2.0.0-javax.jar') -Force
+Copy-Item -LiteralPath $sdk -Destination (Join-Path $distribution 'jerry-instrumentation-2.1.0-javax.jar') -Force
 foreach ($target in @(@('8.5','tomcat85',$baseWar), @('9.0','tomcat9',$baseWar), @('10.0','tomcat100',$jakartaWar), @('10.1','tomcat101',$jakartaWar), @('11.0','tomcat11',$jakartaWar))) {
-  $name = "jerry-2.0.0-$($target[1]).war"
+  $name = "jerry-2.1.0-$($target[1]).war"
   $war = Join-Path $distribution $name
   Copy-Item -LiteralPath $target[2] -Destination $war -Force
   $manifest = Join-Path $working 'jerry-target-manifest.mf'

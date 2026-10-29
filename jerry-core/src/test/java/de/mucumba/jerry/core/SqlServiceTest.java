@@ -241,6 +241,25 @@ class SqlServiceTest {
 
   @Test
   @SuppressWarnings("unchecked")
+  void completionReadsOnlyColumnsForTheExactTableWithoutChangingSchema() throws Exception {
+    try (Connection connection = source.getConnection()) {
+      connection.createStatement().execute("CREATE TABLE EXACT_A (ONE INT)");
+      connection.createStatement().execute("CREATE TABLE EXACTXA (OTHER INT)");
+    }
+    String id = open("alice");
+    Map<String, Object> result = service.metadata("alice", id, "PUBLIC", "EXACT_A", true);
+    List<Map<String, Object>> columns = (List<Map<String, Object>>) result.get("columns");
+    assertEquals(1, columns.size());
+    assertEquals("ONE", columns.get(0).get("COLUMN_NAME"));
+    assertFalse(result.containsKey("indexes"));
+    assertFalse(result.containsKey("primaryKeys"));
+    assertFalse(result.containsKey("foreignKeys"));
+    assertEquals("PUBLIC", result.get("currentSchema"));
+    assertEquals(false, service.status("alice", id).get("transactionOpen"));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
   void configuredSchemaTakesPrecedenceOverUserAndEscapesWildcards() throws Exception {
     try (Connection connection = source.getConnection()) {
       connection.createStatement().execute("CREATE SCHEMA APP_ONE");

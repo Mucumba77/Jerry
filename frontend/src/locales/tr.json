@@ -929,5 +929,6 @@
   "Nicht ermittelbar": "Belirlenemiyor",
   "JDBC-Verbindung": "JDBC bağlantısı",
   "JDBC-Katalog": "JDBC kataloğu",
-  "Passendes Benutzerschema (Fallback)": "Eşleşen kullanıcı şeması (geri dönüş)"
+  "Passendes Benutzerschema (Fallback)": "Eşleşen kullanıcı şeması (geri dönüş)",
+  "Strg+Leertaste: Vervollständigen": "Ctrl+Boşluk: otomatik tamamlama"
 }

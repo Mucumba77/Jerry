@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { format as formatSql } from "sql-formatter";
 import Editor from "./Editor";
+import type { CompletionTable } from "./sqlCompletion";
 import {
   api,
   duration,
@@ -66,7 +67,6 @@ type SqlTab = {
   metadata?: Row;
   schema?: string;
   tables?: Row[];
-  columns: Record<string, string[]>;
 };
 type Preferences = { scripts: Row[]; history: Row[] };
 const busy = (tab?: SqlTab) =>
@@ -103,6 +103,8 @@ export default function SqlWorkspace({ source }: { source?: string }) {
     loaded = useRef(false),
     autoSource = useRef("");
   const metadataGeneration = useRef(0);
+  const completionColumns = useRef(new Map<string, Promise<string[]>>());
+  const completionGeneration = useRef(0);
   prefsRef.current = preferences;
   const tab = tabs.find((t) => t.id === active);
   function update(id: string, patch: Partial<SqlTab>) {
@@ -135,7 +137,6 @@ export default function SqlWorkspace({ source }: { source?: string }) {
               title: s.source,
               text: "-- SQL-Sitzung nach Neuladen wiederhergestellt.\n-- Die bestehende Transaktion bleibt erhalten.\n",
               session: s,
-              columns: {},
             })),
         ]);
         if (sessions[0]) setActive((current) => current || sessions[0].id);
@@ -175,7 +176,6 @@ export default function SqlWorkspace({ source }: { source?: string }) {
         text:
           session.dialect === "oracle" ? "SELECT 1 FROM DUAL;" : "SELECT 1;",
         session,
-        columns: {},
       };
       setTabs((previous) => [...previous, next]);
       setActive(next.id);
@@ -237,6 +237,8 @@ export default function SqlWorkspace({ source }: { source?: string }) {
             : "?schema=" + encodeURIComponent(requestedSchema)),
       );
       if (generation !== metadataGeneration.current) return;
+      completionColumns.current.clear();
+      completionGeneration.current++;
       update(current.id, {
         tables: metadata.tables || [],
         schema: metadata.selectedSchema || "",
@@ -247,6 +249,32 @@ export default function SqlWorkspace({ source }: { source?: string }) {
     } finally {
       if (generation === metadataGeneration.current) setMetadataBusy(false);
     }
+  }
+  function loadCompletionColumns(
+    current: SqlTab,
+    table: CompletionTable,
+  ): Promise<string[]> {
+    const key = JSON.stringify([current.id, table.schema, table.name]);
+    const cached = completionColumns.current.get(key);
+    if (cached) return cached;
+    const query = new URLSearchParams({
+      schema: table.schema,
+      table: table.name,
+      columnsOnly: "true",
+    });
+    const pending = api<Row>(`/sql/${current.id}/metadata?${query}`)
+      .then((result) =>
+        (result.columns || [])
+          .map((column: Row) => String(column.COLUMN_NAME))
+          .filter(Boolean),
+      )
+      .catch((error) => {
+        if (completionColumns.current.get(key) === pending)
+          completionColumns.current.delete(key);
+        throw error;
+      });
+    completionColumns.current.set(key, pending);
+    return pending;
   }
   async function execute(sql: string) {
     if (!tab || busy(tab)) return;
@@ -301,6 +329,8 @@ export default function SqlWorkspace({ source }: { source?: string }) {
   }
   async function closeTab(current: SqlTab) {
     await api("/sql/" + current.id, {}, "DELETE");
+    completionColumns.current.clear();
+    completionGeneration.current++;
     setTabs((previous) => previous.filter((t) => t.id !== current.id));
     if (active === current.id)
       setActive(tabs.find((t) => t.id !== current.id)?.id || "");
@@ -318,12 +348,6 @@ export default function SqlWorkspace({ source }: { source?: string }) {
           new URLSearchParams({ schema, table: row.TABLE_NAME }),
       );
       setTableDetails(result);
-      update(tab.id, {
-        columns: {
-          ...tab.columns,
-          [row.TABLE_NAME]: result.columns.map((c: Row) => c.COLUMN_NAME),
-        },
-      });
     } catch (e) {
       notify((e as Error).message, "error");
     }
@@ -787,7 +811,25 @@ export default function SqlWorkspace({ source }: { source?: string }) {
                     key={tab.id}
                     value={tab.text}
                     dialect={tab.session.dialect}
-                    schema={tab.columns}
+                    catalog={{
+                      identity: JSON.stringify([
+                        tab.id,
+                        tab.schema,
+                        completionGeneration.current,
+                      ]),
+                      schema: tab.schema || "",
+                      quote: String(tab.metadata?.quote ?? ""),
+                      storesUpperCase:
+                        tab.metadata?.storesUpperCaseIdentifiers === true,
+                      storesLowerCase:
+                        tab.metadata?.storesLowerCaseIdentifiers === true,
+                      dialect: tab.session.dialect || "standard",
+                      tables: (tab.tables || []).map((row: Row) => ({
+                        name: String(row.TABLE_NAME),
+                        schema: String(row.TABLE_SCHEM || tab.schema || ""),
+                      })),
+                      loadColumns: (table) => loadCompletionColumns(tab, table),
+                    }}
                     onChange={(text) => update(tab.id, { text })}
                     onExecute={execute}
                     onExecuteAll={() => execute(tab.text)}
@@ -796,7 +838,9 @@ export default function SqlWorkspace({ source }: { source?: string }) {
                     <span>
                       {t(
                         "Strg+Enter: Auswahl / Statement · Strg+Umschalt+Enter: Skript",
-                      ) + " "}
+                      ) +
+                        " · " +
+                        t("Strg+Leertaste: Vervollständigen")}
                     </span>
                     <span className="query-limits">
                       <label>

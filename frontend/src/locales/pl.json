@@ -929,5 +929,6 @@
   "Nicht ermittelbar": "Nie można określić",
   "JDBC-Verbindung": "Połączenie JDBC",
   "JDBC-Katalog": "Katalog JDBC",
-  "Passendes Benutzerschema (Fallback)": "Dopasowany schemat użytkownika (zastępczy)"
+  "Passendes Benutzerschema (Fallback)": "Dopasowany schemat użytkownika (zastępczy)",
+  "Strg+Leertaste: Vervollständigen": "Ctrl+Spacja: autouzupełnianie"
 }

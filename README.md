@@ -4,15 +4,15 @@ Jerry is a self-hosted administration and monitoring console for Apache Tomcat. 
 
 ## Choose a distribution
 
-All platform builds share Jerry version **2.0.0**. Select the WAR that matches your Tomcat family:
+All platform builds share Jerry version **2.1.0**. Select the WAR that matches your Tomcat family:
 
 | WAR | Target | Minimum Java | Servlet namespace |
 | --- | --- | --- | --- |
-| `jerry-2.0.0-tomcat85.war` | Tomcat 8.5 | 8 | `javax` |
-| `jerry-2.0.0-tomcat9.war` | Tomcat 9.0 | 8 | `javax` |
-| `jerry-2.0.0-tomcat100.war` | Tomcat 10.0 | 8 | `jakarta` |
-| `jerry-2.0.0-tomcat101.war` | Tomcat 10.1 | 11 | `jakarta` |
-| `jerry-2.0.0-tomcat11.war` | Tomcat 11.0 | 17 | `jakarta` |
+| `jerry-2.1.0-tomcat85.war` | Tomcat 8.5 | 8 | `javax` |
+| `jerry-2.1.0-tomcat9.war` | Tomcat 9.0 | 8 | `javax` |
+| `jerry-2.1.0-tomcat100.war` | Tomcat 10.0 | 8 | `jakarta` |
+| `jerry-2.1.0-tomcat101.war` | Tomcat 10.1 | 11 | `jakarta` |
+| `jerry-2.1.0-tomcat11.war` | Tomcat 11.0 | 17 | `jakarta` |
 
 Tomcat 8.5 and 10.0 have reached end of support; choose a supported Tomcat release where possible. The Jakarta builds are produced using Apache's Jakarta EE migration tool. Jerry uses Tomcat internals, so verify the intended patch level and providers in a staging environment before production deployment.
 
@@ -30,7 +30,7 @@ The optional configuration file is `$CATALINA_BASE/conf/jerry.properties`; [docs
 
 - JVM, heap, GC, request processor, connector, thread, cluster and pool monitoring with local history and CSV chart exports.
 - Application lifecycle, sessions, servlet mappings, JSP compilation, scoped JMX inspection and framework monitoring.
-- SQL workspace with multiple tabs, schema browsing, explicit transactions, script execution, syntax highlighting and CSV export. Autocommit is off when a connection opens.
+- SQL workspace with multiple tabs, schema browsing, explicit transactions, script execution, syntax highlighting, table/column/function completion and CSV export. Autocommit is off when a connection opens. Suggestions appear while typing or with Ctrl+Space; column metadata is loaded on demand for the selected schema.
 - Log explorer for current, rotated and GZIP-compressed files; searches and file access are bounded to configured roots.
 - Configurable local warnings for heap, observed pool usage and HTTP error rates. Warnings do not send external notifications.
 - Basic monitoring is enabled by default. Extended monitoring is enabled per application, while diagnostic mode is a time-limited lease. Optional HTTP, JMS and JDBC adapters require explicit integration in the monitored application; see [instrumentation.md](docs/instrumentation.md).

@@ -24,6 +24,6 @@ const backend = fs.existsSync(libraries) ? fs.readdirSync(libraries).filter(name
 const fontPath = path.join(root, 'frontend/public/fonts/Onest-Variable.ttf');
 const fonts = [{name:'Onest', file:'fonts/Onest-Variable.ttf', license:'SIL Open Font License 1.1', source:'https://github.com/google/fonts/tree/main/ofl/onest', sha256:crypto.createHash('sha256').update(fs.readFileSync(fontPath)).digest('hex')}];
 texts.push('\n===== Onest: SIL Open Font License 1.1 =====\n'+fs.readFileSync(path.join(root,'frontend/public/fonts/OFL.txt'),'utf8'));
-fs.writeFileSync(path.join(output, 'dependencies.json'), JSON.stringify({ application: 'Jerry', version: '2.0.0', frontend, fonts, backend }, null, 2) + '\n');
+fs.writeFileSync(path.join(output, 'dependencies.json'), JSON.stringify({ application: 'Jerry', version: '2.1.0', frontend, fonts, backend }, null, 2) + '\n');
 fs.writeFileSync(path.join(output, 'THIRD-PARTY-LICENSES.txt'), 'Jerry – packaged frontend dependency licenses\n' + texts.join('\n') + '\nBackend: see bundled JAR META-INF notices (also extracted by package.ps1).\n');
 console.log(`Dependency inventory: ${frontend.length} frontend packages, ${backend.length} runtime JARs.`);

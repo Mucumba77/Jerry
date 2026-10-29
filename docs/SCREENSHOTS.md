@@ -40,7 +40,7 @@ The data-source view lists available JNDI resources and configured connections. 
 
 ## SQL workspace
 
-The workspace provides a SQL editor, schema browser, result grid and CSV export. Each tab has its own connection; autocommit is off when opened, with explicit commit and rollback controls. The pictured rows are synthetic test data.
+The workspace provides a SQL editor, schema browser, result grid and CSV export. Each tab has its own connection; autocommit is off when opened, with explicit commit and rollback controls. Since 2.1, completion suggests tables from the selected schema, columns after a table or common alias, and selected SQL functions. Use Ctrl+Space to open suggestions and the schema refresh button after schema changes. The pictured rows are synthetic test data.
 
 [![SQL query and results in the workspace](screenshots/sql-workspace.png)](screenshots/sql-workspace.png)
 

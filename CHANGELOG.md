@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.1.0
+
+- Added SQL completion for tables, columns, common aliases and selected dialect-specific functions. Column metadata is loaded only when needed and cached per connection and schema.
+- Added a lightweight JDBC metadata request for editor completion and browser-level completion checks.
+
 ## 2.0.0
 
 - Renamed Jerry's Java packages and Maven group to `de.mucumba.jerry`.
