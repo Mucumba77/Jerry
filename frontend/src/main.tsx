@@ -316,16 +316,9 @@ function App() {
               />
               <aside className={"sidebar " + (mobile ? "open" : "")}>
                 <a className="brand" href="#dashboard">
-                  <span className="brand-mark">
-                    J<span />
+                  <span className="brand-logo">
+                    <img src="jerry-logo.png" alt="Jerry" />
                   </span>
-                  <div>
-                    <strong dir="ltr">
-                      Jerry
-                      <span className="brand-dot">.</span>
-                    </strong>
-                    <small dir="ltr">TOMCAT OPERATIONS</small>
-                  </div>
                 </a>
                 <div className="instance-switch">
                   <span className="instance-icon">

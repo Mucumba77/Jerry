@@ -18,7 +18,7 @@
   <security-constraint><web-resource-collection><web-resource-name>Jerry console</web-resource-name><url-pattern>/*</url-pattern></web-resource-collection><auth-constraint>
     <role-name>jerry-viewer</role-name><role-name>jerry-operator</role-name><role-name>jerry-sql</role-name><role-name>jerry-admin</role-name><role-name>jerry-sql-read</role-name>
   </auth-constraint></security-constraint>
-  <security-constraint><web-resource-collection><web-resource-name>Login assets</web-resource-name><url-pattern>/login.html</url-pattern><url-pattern>/login-error.html</url-pattern><url-pattern>/login.css</url-pattern><url-pattern>/login-i18n.js</url-pattern><url-pattern>/fonts.css</url-pattern><url-pattern>/fonts/*</url-pattern></web-resource-collection></security-constraint>
+  <security-constraint><web-resource-collection><web-resource-name>Login assets</web-resource-name><url-pattern>/login.html</url-pattern><url-pattern>/login-error.html</url-pattern><url-pattern>/login.css</url-pattern><url-pattern>/login-i18n.js</url-pattern><url-pattern>/jerry-logo.png</url-pattern><url-pattern>/fonts.css</url-pattern><url-pattern>/fonts/*</url-pattern></web-resource-collection></security-constraint>
   <mime-mapping><extension>ttf</extension><mime-type>font/ttf</mime-type></mime-mapping>
   <!-- API authentication is checked by JerryServlet so an expired fetch receives 401 rather than saving an API URL as the form-login destination. -->
   <security-constraint><web-resource-collection><web-resource-name>API authentication boundary</web-resource-name><url-pattern>/api/*</url-pattern></web-resource-collection></security-constraint>

@@ -114,8 +114,23 @@ p {
 .brand {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 30px 25px 29px;
+  padding: 22px 24px 25px;
+}
+.brand-logo {
+  display: block;
+  position: relative;
+  width: 100%;
+  height: 108px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #fff;
+}
+.brand-logo img {
+  position: absolute;
+  inset: -20%;
+  width: 140%;
+  height: 140%;
+  object-fit: contain;
 }
 .brand-mark {
   width: 39px;

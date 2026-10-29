@@ -79,7 +79,7 @@ async function main() {
     await check('Anonymous API access rejected', async () => {
       await new Client().api('/me', {}, 401);
     });
-    await check('Login font and local styles load without authentication', async () => {
+    await check('Login branding, font and local styles load without authentication', async () => {
       const anonymous = new Client();
       for (const route of ['/jerry/login.css','/jerry/fonts.css','/jerry/fonts/OFL.txt']) {
         const response = await anonymous.request(route);
@@ -94,6 +94,16 @@ async function main() {
       const bytes=Buffer.from(await font.arrayBuffer());
       assert.equal(bytes.subarray(0,4).toString('hex'),'00010000');
       assert.ok(bytes.length>100000);
+      const logo = await anonymous.request('/jerry/jerry-logo.png');
+      assert.equal(logo.status,200);
+      assert.match(logo.headers.get('content-type'), /image\/png/);
+      const logoBytes = Buffer.from(await logo.arrayBuffer());
+      assert.equal(logoBytes.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
+      for (const route of ['/jerry/login.html','/jerry/login-error.html']) {
+        const page = await anonymous.request(route);
+        assert.equal(page.status,200,route);
+        assert.match(await page.text(), /src="jerry-logo\.png"/);
+      }
     });
     await check('Tomcat FORM authentication and exact target platform', async () => {
       const me = await admin.login(access.user, access.password);
