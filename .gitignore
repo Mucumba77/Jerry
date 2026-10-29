@@ -1,0 +1,9 @@
+.tools/
+.reference/
+**/target/
+frontend/node_modules/
+frontend/dist/
+dist/
+*.log
+.idea/
+.vscode/

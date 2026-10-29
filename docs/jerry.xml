@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Optional external Context descriptor: CATALINA_BASE/conf/Catalina/localhost/jerry.xml -->
+<Context privileged="true" reloadable="false">
+  <CookieProcessor sameSiteCookies="lax"/>
+</Context>

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title data-i18n="Anmeldung fehlgeschlagen · Jerry">
+      Anmeldung fehlgeschlagen · Jerry
+    </title>
+    <link rel="stylesheet" href="fonts.css" />
+    <link rel="stylesheet" href="login.css" />
+    <script src="login-i18n.js" defer></script>
+  </head>
+  <body>
+    <section class="intro">
+      <div class="brand">
+        <span class="mark">J</span
+        ><span>JERRY<span class="brand-dot">.</span></span>
+      </div>
+      <div>
+        <h1>
+          <span data-i18n="Deine Instanz.">Deine Instanz.</span><br /><span
+            data-i18n="Alles im Blick."
+            >Alles im Blick.</span
+          >
+        </h1>
+        <p data-i18n="Dein Arbeitsplatz für Tomcat, Datenbanken und Logs.">
+          Dein Arbeitsplatz für Tomcat, Datenbanken und Logs.
+        </p>
+      </div>
+      <small>APACHE TOMCAT · OPERATIONS</small>
+    </section>
+    <main class="login-area">
+      <div class="card">
+        <label class="login-language" for="login-language" data-i18n="Sprache"
+          >Sprache</label
+        >
+        <select id="login-language" aria-label="Sprache"></select>
+        <div class="eyebrow" data-i18n="ANMELDUNG">ANMELDUNG</div>
+        <h2 data-i18n="Noch einmal versuchen.">Noch einmal versuchen.</h2>
+        <div
+          class="error"
+          data-i18n="Die Anmeldung ist fehlgeschlagen. Bitte prüfe Benutzername, Passwort und die zugewiesenen Jerry-Rollen."
+        >
+          Die Anmeldung ist fehlgeschlagen. Bitte prüfe Benutzername, Passwort
+          und die zugewiesenen Jerry-Rollen.
+        </div>
+        <form action="j_security_check" method="post">
+          <label for="username" data-i18n="Benutzername">Benutzername</label>
+          <input
+            id="username"
+            name="j_username"
+            autocomplete="username"
+            required
+            autofocus
+          />
+          <label for="password" data-i18n="Passwort">Passwort</label>
+          <input
+            id="password"
+            name="j_password"
+            type="password"
+            autocomplete="current-password"
+            required
+          />
+          <button type="submit" data-i18n="Erneut anmelden">
+            Erneut anmelden
+          </button>
+        </form>
+      </div>
+    </main>
+  </body>
+</html>

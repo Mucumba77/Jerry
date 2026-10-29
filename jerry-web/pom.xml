@@ -1,0 +1,14 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"><modelVersion>4.0.0</modelVersion>
+  <parent><groupId>de.mucumba.jerry</groupId><artifactId>jerry</artifactId><version>2.0.0</version></parent><artifactId>jerry-web</artifactId><packaging>war</packaging>
+  <dependencies>
+    <dependency><groupId>de.mucumba.jerry</groupId><artifactId>jerry-tomcat85</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>de.mucumba.jerry</groupId><artifactId>jerry-instrumentation</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+    <dependency><groupId>javax.servlet</groupId><artifactId>javax.servlet-api</artifactId><version>3.1.0</version><scope>provided</scope></dependency>
+    <dependency><groupId>org.apache.tomcat</groupId><artifactId>tomcat-catalina</artifactId><version>${tomcat.version}</version><scope>provided</scope></dependency>
+    <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><scope>test</scope></dependency>
+  </dependencies>
+  <build><finalName>jerry</finalName><plugins><plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-war-plugin</artifactId><configuration>
+    <webResources><resource><directory>../frontend/dist</directory></resource><resource><directory>../jerry-instrumentation/target</directory><targetPath>instrumentation</targetPath><includes><include>jerry-instrumentation-${project.version}.jar</include></includes></resource><resource><directory>..</directory><targetPath>META-INF</targetPath><includes><include>LICENSE</include><include>NOTICE.md</include></includes></resource></webResources>
+    <archive><manifestEntries><Implementation-Title>Jerry</Implementation-Title><Implementation-Version>${project.version}</Implementation-Version><Build-Jdk-Spec>8</Build-Jdk-Spec></manifestEntries></archive>
+  </configuration></plugin></plugins></build>
+</project>

@@ -1,0 +1,238 @@
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+}
+body {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  font:
+    14px/1.6 "Onest",
+    "Segoe UI",
+    Arial,
+    sans-serif;
+  background: #f3f5fa;
+  color: #10264a;
+}
+.intro {
+  background: #182932;
+  color: #fff;
+  padding: 8vh 11%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+.intro::after {
+  content: "";
+  position: absolute;
+  width: 440px;
+  height: 440px;
+  border: 1px solid #087e8b66;
+  border-radius: 50%;
+  right: -250px;
+  bottom: -160px;
+  box-shadow:
+    0 0 0 65px #087e8b0d,
+    0 0 0 130px #087e8b09;
+  pointer-events: none;
+}
+.brand {
+  font-size: 37px;
+  font-weight: 750;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+.brand-dot {
+  color: #26a69a;
+}
+.mark {
+  display: inline-flex;
+  background: #26a69a;
+  color: #ffffff;
+  border-radius: 5px;
+  width: 43px;
+  height: 47px;
+  align-items: center;
+  justify-content: center;
+  font-size: 35px;
+  font-weight: 800;
+}
+.intro h1 {
+  font-size: clamp(36px, 3.7vw, 62px);
+  line-height: 1.13;
+  font-weight: 720;
+  letter-spacing: -2px;
+  max-width: 550px;
+  margin: 35px 0 25px;
+}
+.intro h1 span {
+  color: #82d4c8;
+}
+.intro p {
+  color: #bbc9e2;
+  max-width: 390px;
+  font-size: 15px;
+  line-height: 1.8;
+}
+.intro small {
+  font-size: 11px;
+  color: #a4b4d0;
+  letter-spacing: 1.5px;
+}
+.badge {
+  font-size: 10px;
+  font-weight: 650;
+  color: #fff;
+  border-left: 3px solid #26a69a;
+  padding: 2px 12px;
+  display: inline-block;
+  letter-spacing: 1.7px;
+  margin-top: 20px;
+}
+.login-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 50px 35px;
+}
+.card {
+  width: 390px;
+  max-width: 100%;
+}
+.login-language {
+  margin: 0 0 5px;
+  color: #61708a;
+}
+.card select {
+  width: 100%;
+  padding: 8px 10px;
+  margin-bottom: 28px;
+  color: #10264a;
+  background: #fff;
+  border: 1px solid #c7d0e0;
+  border-radius: 5px;
+  font: inherit;
+}
+.eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+  color: #087269;
+}
+.card h2 {
+  font-size: 34px;
+  letter-spacing: -1.3px;
+  line-height: 1.2;
+  font-weight: 720;
+  margin: 16px 0 14px;
+}
+.card > p {
+  font-size: 14px;
+  color: #61708a;
+  margin: 0 0 32px;
+}
+label {
+  display: block;
+  font-size: 12px;
+  margin: 20px 0 8px;
+  font-weight: 650;
+}
+input {
+  display: block;
+  width: 100%;
+  background: #fff;
+  border: 1px solid #c7d0e0;
+  border-radius: 5px;
+  padding: 13px 14px;
+  font: inherit;
+  color: #10264a;
+}
+input:focus-visible {
+  outline: 2px solid #087e8b;
+  outline-offset: 2px;
+}
+button {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: #087e8b;
+  color: #fff;
+  border-radius: 5px;
+  font:
+    650 14px "Onest",
+    "Segoe UI",
+    sans-serif;
+  padding: 15px;
+  margin-top: 28px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+button:hover {
+  background: #066873;
+}
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid #087e8b;
+  outline-offset: 4px;
+}
+a {
+  color: #087e8b;
+}
+footer {
+  font-size: 11px;
+  color: #61708a;
+  margin-top: 28px;
+  text-align: center;
+}
+.error {
+  font-size: 13px;
+  color: #a12437;
+  background: #fff0f2;
+  border: 1px solid #f2cbd2;
+  border-left: 3px solid #bd3342;
+  border-radius: 5px;
+  padding: 14px;
+  margin: 22px 0;
+}
+@media (max-width: 760px) {
+  body {
+    display: block;
+  }
+  .intro {
+    padding: 24px 30px;
+  }
+  .intro::after,
+  .intro h1,
+  .intro p,
+  .intro small,
+  .intro .badge {
+    display: none;
+  }
+  .brand {
+    font-size: 29px;
+  }
+  .mark {
+    height: 36px;
+    width: 34px;
+    font-size: 28px;
+  }
+  .login-area {
+    padding: 48px 26px;
+  }
+  .card h2 {
+    font-size: 31px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Merge roles and the user into your existing tomcat-users.xml. Replace the placeholder before use. -->
+<tomcat-users>
+  <role rolename="jerry-viewer"/>
+  <role rolename="jerry-operator"/>
+  <role rolename="jerry-sql"/>
+  <role rolename="jerry-sql-read"/>
+  <role rolename="jerry-admin"/>
+  <user username="YOUR_ADMIN_USERNAME" password="REPLACE_WITH_YOUR_OWN_PASSWORD" roles="jerry-admin"/>
+</tomcat-users>

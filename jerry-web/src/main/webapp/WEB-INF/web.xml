@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee" version="3.1">
+  <display-name>Jerry</display-name>
+  <listener><listener-class>de.mucumba.jerry.web.SessionLifecycle</listener-class></listener>
+  <filter><filter-name>headers</filter-name><filter-class>de.mucumba.jerry.web.SecurityHeaders</filter-class><async-supported>true</async-supported></filter>
+  <filter-mapping><filter-name>headers</filter-name><url-pattern>/*</url-pattern></filter-mapping>
+  <servlet><servlet-name>default</servlet-name><servlet-class>org.apache.catalina.servlets.DefaultServlet</servlet-class>
+    <init-param><param-name>fileEncoding</param-name><param-value>UTF-8</param-value></init-param>
+    <init-param><param-name>readonly</param-name><param-value>true</param-value></init-param>
+    <init-param><param-name>listings</param-name><param-value>false</param-value></init-param>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+  <servlet-mapping><servlet-name>default</servlet-name><url-pattern>/</url-pattern></servlet-mapping>
+  <servlet><servlet-name>jerry</servlet-name><servlet-class>de.mucumba.jerry.web.JerryServlet</servlet-class><load-on-startup>1</load-on-startup><async-supported>true</async-supported></servlet>
+  <servlet-mapping><servlet-name>jerry</servlet-name><url-pattern>/api/*</url-pattern></servlet-mapping>
+  <session-config><session-timeout>30</session-timeout><cookie-config><http-only>true</http-only></cookie-config><tracking-mode>COOKIE</tracking-mode></session-config>
+  <welcome-file-list><welcome-file>index.html</welcome-file></welcome-file-list>
+  <security-constraint><web-resource-collection><web-resource-name>Jerry console</web-resource-name><url-pattern>/*</url-pattern></web-resource-collection><auth-constraint>
+    <role-name>jerry-viewer</role-name><role-name>jerry-operator</role-name><role-name>jerry-sql</role-name><role-name>jerry-admin</role-name><role-name>jerry-sql-read</role-name>
+  </auth-constraint></security-constraint>
+  <security-constraint><web-resource-collection><web-resource-name>Login assets</web-resource-name><url-pattern>/login.html</url-pattern><url-pattern>/login-error.html</url-pattern><url-pattern>/login.css</url-pattern><url-pattern>/login-i18n.js</url-pattern><url-pattern>/fonts.css</url-pattern><url-pattern>/fonts/*</url-pattern></web-resource-collection></security-constraint>
+  <mime-mapping><extension>ttf</extension><mime-type>font/ttf</mime-type></mime-mapping>
+  <!-- API authentication is checked by JerryServlet so an expired fetch receives 401 rather than saving an API URL as the form-login destination. -->
+  <security-constraint><web-resource-collection><web-resource-name>API authentication boundary</web-resource-name><url-pattern>/api/*</url-pattern></web-resource-collection></security-constraint>
+  <login-config><auth-method>FORM</auth-method><realm-name>Jerry</realm-name><form-login-config><form-login-page>/login.html</form-login-page><form-error-page>/login-error.html</form-error-page></form-login-config></login-config>
+  <security-role><role-name>jerry-viewer</role-name></security-role><security-role><role-name>jerry-operator</role-name></security-role><security-role><role-name>jerry-sql</role-name></security-role><security-role><role-name>jerry-admin</role-name></security-role><security-role><role-name>jerry-sql-read</role-name></security-role>
+</web-app>

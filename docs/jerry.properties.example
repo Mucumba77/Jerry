@@ -1,0 +1,58 @@
+# Jerry configuration (UTF-8). Copy to CATALINA_BASE/conf/jerry.properties.
+# All paths may use forward slashes, including Windows paths.
+# data.dir=C:/Tomcat/data/jerry
+# logs.roots=C:/Tomcat/logs|D:/application-logs
+https.required=false
+
+monitor.interval.seconds=10
+monitor.raw.hours=24
+monitor.history.days=30
+monitor.disk.mb=256
+
+# Application monitoring: BASIC unless explicitly enabled by an administrator.
+monitor.diagnostic.maxSeconds=900
+monitor.diagnostic.maxApplications=2
+monitor.diagnostic.samplePercent=1
+monitor.diagnostic.queue=256
+monitor.diagnostic.eventsPerApplication=100
+monitor.extended.operations=64
+monitor.application.budgetMs=1000
+# Optional app-scoped JMX ownership rule; copy the exact app ID from its JMX tab.
+# monitor.jmx.APPLICATION_ID.patterns=your.domain:application=your-app,*
+
+sql.workers=4
+sql.sessions.max=16
+sql.sessions.perSource=4
+sql.idle.minutes=5
+sql.transaction.minutes=15
+sql.networkTimeout.seconds=120
+sql.queryTimeout.max=600
+sql.fetchSize=200
+sql.export.rows.max=1000000
+sql.result.mb=64
+sql.spool.mb=512
+sql.cell.chars=65536
+
+logs.depth=4
+logs.page.kb=512
+logs.archive.mb=256
+logs.cache.mb=512
+logs.search.seconds=60
+logs.search.output.mb=8
+# logs.timezone=Europe/Berlin
+# Optional custom timestamp extractor: the FIRST regex group is the timestamp.
+# logs.timestamp.pattern=dd.MM.yyyy HH:mm:ss.SSS
+# logs.timestamp.regex=^(.{23})
+# logs.timestamp.locale=de
+
+deployment.war.mb=256
+threads.forceStop.enabled=false
+wrapper.restart.enabled=false
+
+# Optional direct JDBC connection. Install a Java-8-compatible driver in Tomcat/lib.
+# datasource.reporting.driver=org.postgresql.Driver
+# datasource.reporting.url=jdbc:postgresql://db.example.internal:5432/reporting
+# datasource.reporting.user=reporting_reader
+# datasource.reporting.password=env:JERRY_REPORTING_PASSWORD
+# Set true ONLY if this database account has database-enforced read-only rights.
+# datasource.reporting.readOnlyEnforced=true
