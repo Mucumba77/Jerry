@@ -45,17 +45,19 @@ The interface offers German, English, French, Spanish, Italian, Russian, Portugu
 
 ## Screenshots
 
-These screenshots show Jerry 2.0 in an isolated Tomcat test instance with sample applications and data. Click an image to view it at full size; the [screenshot guide](docs/SCREENSHOTS.md) explains each view and its prerequisites.
+These screenshots show Jerry 2.1.2 in an isolated Tomcat test instance with sample applications and data. Click an image to view it at full size; the [screenshot guide](docs/SCREENSHOTS.md) explains each view and its prerequisites.
 
 | Dashboard and warnings | Deployed applications |
 | --- | --- |
-| [![Dashboard showing health, warnings, JVM memory and request throughput](docs/screenshots/dashboard.png)](docs/screenshots/dashboard.png) | [![List of deployed applications and monitoring modes](docs/screenshots/applications.png)](docs/screenshots/applications.png) |
+| [![Dashboard showing health, warnings, JVM memory and request throughput](docs/screenshots/dashboard.jpg)](docs/screenshots/dashboard.jpg) | [![List of deployed applications and monitoring modes](docs/screenshots/applications.jpg)](docs/screenshots/applications.jpg) |
 | **Per-application monitoring modes** | **Spring, Quartz and JMS components** |
-| [![Basic, extended and time-limited diagnostic monitoring modes](docs/screenshots/application-monitoring.png)](docs/screenshots/application-monitoring.png) | [![Spring, Quartz and local JMS component metrics](docs/screenshots/application-components.png)](docs/screenshots/application-components.png) |
+| [![Basic, extended and time-limited diagnostic monitoring modes](docs/screenshots/application-monitoring.jpg)](docs/screenshots/application-monitoring.jpg) | [![Spring, Quartz and local JMS component metrics](docs/screenshots/application-components.jpg)](docs/screenshots/application-components.jpg) |
 | **Connectors and traffic** | **Data sources and connection pools** |
-| [![Connector request rates, transfer volumes and throughput history](docs/screenshots/connectors.png)](docs/screenshots/connectors.png) | [![Data sources showing occupied, free and maximum connections](docs/screenshots/datasources.png)](docs/screenshots/datasources.png) |
+| [![Connector request rates, transfer volumes and throughput history](docs/screenshots/connectors.jpg)](docs/screenshots/connectors.jpg) | [![Data sources showing occupied, free and maximum connections](docs/screenshots/datasources.jpg)](docs/screenshots/datasources.jpg) |
 | **SQL workspace** | **Log Explorer** |
-| [![SQL workspace with an example SELECT, transaction controls and results](docs/screenshots/sql-workspace.png)](docs/screenshots/sql-workspace.png) | [![Log Explorer with test access logs and archived files](docs/screenshots/logs.png)](docs/screenshots/logs.png) |
+| [![SQL workspace with an example SELECT, transaction controls and results](docs/screenshots/sql-workspace.jpg)](docs/screenshots/sql-workspace.jpg) | [![Log Explorer with example logs and archived files](docs/screenshots/logs.jpg)](docs/screenshots/logs.jpg) |
+| **Sign in** | **JMS clients and Spring executors** |
+| [![Jerry sign-in page with the new logo](docs/screenshots/login.jpg)](docs/screenshots/login.jpg) | [![Local JMS clients and Spring executor metrics](docs/screenshots/application-jms.jpg)](docs/screenshots/application-jms.jpg) |
 
 ## Build from source
 
