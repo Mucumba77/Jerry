@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.1.1
 
 - Resolve JNDI data sources from current Tomcat resource declarations, rejecting URL-style or traversal names.
 - Validate application resource paths and restrict JSP source access to discovered JSP files.
