@@ -27,7 +27,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: node scripts/version.cjs && sh build.sh
       - run: node --test scripts/testenv/history-charts.test.mjs scripts/testenv/connector-traffic.test.mjs scripts/testenv/i18n.test.mjs scripts/testenv/sql-completion.test.mjs
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: jerry-distributions
           path: dist/
