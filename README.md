@@ -37,6 +37,20 @@ The optional configuration file is `$CATALINA_BASE/conf/jerry.properties`; [docs
 
 The interface offers German, English, French, Spanish, Italian, Russian, Portuguese, Dutch, Polish, Turkish, Chinese, Japanese and Arabic. The selected language is stored in the browser and translation catalogs are packaged locally. Translations are machine-assisted and need community review; some dynamic messages supplied by drivers or the server may remain in their original language.
 
+## Screenshots
+
+These screenshots show Jerry 2.0 in an isolated Tomcat test instance with sample applications and data. Click an image to view it at full size; the [screenshot guide](docs/SCREENSHOTS.md) explains each view and its prerequisites.
+
+| Dashboard and warnings | Deployed applications |
+| --- | --- |
+| [![Dashboard showing health, warnings, JVM memory and request throughput](docs/screenshots/dashboard.png)](docs/screenshots/dashboard.png) | [![List of deployed applications and monitoring modes](docs/screenshots/applications.png)](docs/screenshots/applications.png) |
+| **Per-application monitoring modes** | **Spring, Quartz and JMS components** |
+| [![Basic, extended and time-limited diagnostic monitoring modes](docs/screenshots/application-monitoring.png)](docs/screenshots/application-monitoring.png) | [![Spring, Quartz and local JMS component metrics](docs/screenshots/application-components.png)](docs/screenshots/application-components.png) |
+| **Connectors and traffic** | **Data sources and connection pools** |
+| [![Connector request rates, transfer volumes and throughput history](docs/screenshots/connectors.png)](docs/screenshots/connectors.png) | [![Data sources showing occupied, free and maximum connections](docs/screenshots/datasources.png)](docs/screenshots/datasources.png) |
+| **SQL workspace** | **Log Explorer** |
+| [![SQL workspace with an example SELECT, transaction controls and results](docs/screenshots/sql-workspace.png)](docs/screenshots/sql-workspace.png) | [![Log Explorer with test access logs and archived files](docs/screenshots/logs.png)](docs/screenshots/logs.png) |
+
 ## Build from source
 
 Build with **JDK 8**, Maven 3.9 and Node.js 22 or later. The generated WARs run on the Java versions in the table above; Node.js is not needed by Tomcat. The build downloads the official Apache Jakarta migration tool as a build dependency.
