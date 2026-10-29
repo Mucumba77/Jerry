@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.2
+
+- Add the Jerry mouse and monitoring logo to the application, login pages and project README.
+- Center the logo above the login form and blend its sidebar variant into both themes.
+- Allow the login logo to load before authentication and verify it in the Tomcat integration suite.
+
 ## 2.1.1
 
 - Resolve JNDI data sources from current Tomcat resource declarations, rejecting URL-style or traversal names.
