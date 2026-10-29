@@ -2,7 +2,7 @@
 
 Jerry is a self-hosted administration and monitoring console for Apache Tomcat. It is distributed as a WAR and runs inside the Tomcat instance it manages. Jerry is independently implemented; PSI Probe was used as a functional reference, and its source code and libraries are not included.
 
-The [German Jerry Wiki](https://github.com/Mucumba77/Jerry/wiki) explains installation, security, configuration, monitoring, SQL, troubleshooting and development.
+The Jerry Wiki explains installation, security, configuration, monitoring, SQL, troubleshooting and development: [English](https://github.com/Mucumba77/Jerry/wiki/EN-Home) | [Deutsch](https://github.com/Mucumba77/Jerry/wiki).
 
 ## Choose a distribution
 
