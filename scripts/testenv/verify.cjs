@@ -102,7 +102,7 @@ async function main() {
       for (const route of ['/jerry/login.html','/jerry/login-error.html']) {
         const page = await anonymous.request(route);
         assert.equal(page.status,200,route);
-        assert.match(await page.text(), /src="jerry-logo\.png"/);
+        assert.match(await page.text(), /src="jerry-logo\.png\?v=original"/);
       }
     });
     await check('Tomcat FORM authentication and exact target platform', async () => {

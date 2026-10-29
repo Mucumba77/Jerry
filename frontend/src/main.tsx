@@ -317,7 +317,7 @@ function App() {
               <aside className={"sidebar " + (mobile ? "open" : "")}>
                 <a className="brand" href="#dashboard">
                   <span className="brand-logo">
-                    <img src="jerry-logo.png" alt="Jerry" />
+                    <img src="jerry-logo.png?v=original" alt="Jerry" />
                   </span>
                 </a>
                 <div className="instance-switch">
