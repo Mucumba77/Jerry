@@ -42,6 +42,9 @@ body {
     0 0 0 130px #087e8b09;
   pointer-events: none;
 }
+.intro > div:first-child {
+  margin: auto 0;
+}
 .brand {
   position: relative;
   width: 230px;
@@ -49,7 +52,7 @@ body {
   height: 132px;
   overflow: hidden;
   border-radius: 8px;
-  background: #fff;
+  margin: 0 0 28px;
 }
 .brand img {
   position: absolute;
@@ -57,6 +60,7 @@ body {
   width: 140%;
   height: 140%;
   object-fit: contain;
+  mix-blend-mode: multiply;
 }
 .intro h1 {
   font-size: clamp(36px, 3.7vw, 62px);
@@ -200,7 +204,7 @@ footer {
     display: block;
   }
   .intro {
-    padding: 24px 30px;
+    display: none;
   }
   .intro::after,
   .intro h1,
