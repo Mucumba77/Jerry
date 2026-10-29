@@ -2,6 +2,7 @@ name: Publish versioned distributions
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
 permissions:
   contents: write
 jobs:
@@ -21,17 +22,28 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Build and test
         run: |
-          test "$GITHUB_REF_NAME" = "v$(node scripts/version.cjs)"
+          version=$(node scripts/version.cjs)
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+            test "$GITHUB_REF" = refs/heads/main
+          else
+            test "$GITHUB_REF_NAME" = "v$version"
+          fi
           sh build.sh
           node --test scripts/testenv/history-charts.test.mjs scripts/testenv/connector-traffic.test.mjs scripts/testenv/i18n.test.mjs scripts/testenv/sql-completion.test.mjs
+          node scripts/release-notes.cjs > "$RUNNER_TEMP/jerry-release-notes.md"
       - name: Publish release assets
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            echo "Release already exists; preserving its published assets."
-          else
-            version=$(node scripts/version.cjs)
-            gh release create "$GITHUB_REF_NAME" dist/jerry-"$version"-tomcat*.war dist/jerry-"$version"-tomcat*.war.sha256 dist/jerry-instrumentation-"$version"-*.jar --generate-notes
+          version=$(node scripts/version.cjs)
+          tag="v$version"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag already exists; preserving its published assets." >&2
+            exit 1
           fi
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ] && [ -n "$(git ls-remote --tags origin "refs/tags/$tag")" ]; then
+            echo "Tag $tag already exists; refusing to use an unverified target." >&2
+            exit 1
+          fi
+          gh release create "$tag" dist/jerry-"$version"-tomcat*.war dist/jerry-"$version"-tomcat*.war.sha256 dist/jerry-instrumentation-"$version"-*.jar --target "$GITHUB_SHA" --title "Jerry $version" --notes-file "$RUNNER_TEMP/jerry-release-notes.md"
 

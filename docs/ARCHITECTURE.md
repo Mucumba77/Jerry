@@ -16,9 +16,9 @@ Three optional adapter variants are built:
 
 | Adapter | Servlet API | JMS API |
 | --- | --- | --- |
-| `jerry-instrumentation-2.1.0-javax.jar` | `javax.servlet` | `javax.jms` |
-| `jerry-instrumentation-2.1.0-jakarta.jar` | `jakarta.servlet` | `jakarta.jms` |
-| `jerry-instrumentation-2.1.0-jakarta-servlet-javax-jms.jar` | `jakarta.servlet` | `javax.jms` |
+| `jerry-instrumentation-2.1.1-javax.jar` | `javax.servlet` | `javax.jms` |
+| `jerry-instrumentation-2.1.1-jakarta.jar` | `jakarta.servlet` | `jakarta.jms` |
+| `jerry-instrumentation-2.1.1-jakarta-servlet-javax-jms.jar` | `jakarta.servlet` | `javax.jms` |
 
 The Jakarta WAR offers the Jakarta adapter by default and includes the legacy-JMS variant separately. JMS monitoring is client-side; Jerry does not require a broker and does not report broker queue depth. The HTTP adapter measures until response headers, not full body consumption. Spring version compatibility and provider-specific interfaces must be verified in the target application.
 
