@@ -30,6 +30,7 @@ cat > "$work/fixture/WEB-INF/web.xml" <<'XML'
 <web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee" version="3.1"><servlet><servlet-name>fixture</servlet-name><servlet-class>de.mucumba.jerry.testenv.PlatformFixture</servlet-class></servlet><servlet-mapping><servlet-name>fixture</servlet-name><url-pattern>/api</url-pattern></servlet-mapping></web-app>
 XML
 echo '<Context><ResourceLink name="jdbc/JerryDemo" global="jdbc/JerryDemo" type="javax.sql.DataSource"/></Context>' > "$work/fixture/META-INF/context.xml"
+echo '<%@ page contentType="text/plain" %>Jerry fixture JSP' > "$work/fixture/index.jsp"
 (cd "$work/fixture" && "$JAVA8_HOME/bin/jar" cf "$work/fixture-javax.war" .)
 fixture="$work/fixture-javax.war"
 if [[ "$family_major" != 8 && "$family_major" != 9 ]]; then

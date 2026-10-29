@@ -16,6 +16,8 @@ async function main(){
   await request('/jerry/');const login=await request('/jerry/j_security_check',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({j_username:'platform-admin',j_password:password})});assert.equal(login.status,303);
   const me=await api('/me');csrf=me.csrf;assert.equal(me.version,process.env.JERRY_PROJECT_VERSION || require('../../frontend/package.json').version);assert.match(me.server.server,new RegExp('Apache Tomcat/'+process.env.JERRY_TEST_VERSION.replaceAll('.','\\.')));
   const apps=await api('/applications'), fixture=apps.find(a=>a.path==='/fixture');assert.ok(fixture?.running);const endpoint=`/applications/${fixture.id}/monitoring`;
+  const jsp=await api(`/applications/${fixture.id}/jsps?path=${encodeURIComponent('/index.jsp')}`);
+  assert.match(jsp.source,/Jerry fixture JSP/,'A registered JSP must remain readable');
   for (const scope of ['global', fixture.id]) {
     for (const name of ['ldap://127.0.0.1:1/evil', 'jdbc/../evil']) {
       const forged=Buffer.from(`${scope}\n${name}`).toString('base64url');
