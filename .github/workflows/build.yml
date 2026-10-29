@@ -24,6 +24,7 @@ jobs:
           name: jerry-distributions
           path: dist/
   platform:
+    name: Platform ${{ matrix.family }}
     needs: build
     runs-on: ubuntu-latest
     strategy:

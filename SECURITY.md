@@ -10,4 +10,6 @@ The latest published 2.x release is the intended target for security fixes. Olde
 
 Use [private vulnerability reporting](https://github.com/Mucumba77/Jerry/security/advisories/new) to describe the affected version, impact and minimal safe reproduction. Do not disclose details publicly before a fix and coordinated disclosure. If the form is unavailable, contact the owner privately through GitHub.
 
+The instrumentation module compiles against Spring Web 5.3 as a `provided` dependency for Java 8 compatibility; it is not bundled into the adapter or Jerry WAR. The monitored application supplies its own Spring runtime and is responsible for keeping it supported and assessing its advisories. Do not replace the compile dependency with Spring 6 without considering that Spring 6 requires Java 17 and Jakarta APIs.
+
 The application includes role checks, CSRF protection for state changes, bounded background workers, path restrictions for log access and masking for some sensitive JMX attributes. These measures do not replace a network boundary, least privilege or review of the data exposed by your application and JDBC drivers.
