@@ -74,7 +74,7 @@ Use Tomcat roles to separate viewer, operator, SQL and administrator access. JDB
 
 See [SECURITY.md](SECURITY.md), [CONTRIBUTING.md](CONTRIBUTING.md), [NOTICE.md](NOTICE.md) and the documentation directory. The test environment in [docs/TESTUMGEBUNG.md](docs/TESTUMGEBUNG.md) is isolated and uses local fixture credentials; never reuse them for production.
 
-For help and feature proposals see [SUPPORT.md](SUPPORT.md) and [ROADMAP.md); contributions follow the [Code of Conduct](CODE_OF_CONDUCT.md). Automated tests cover representative platforms and fixtures, not every provider combination or production workload.
+For help and feature proposals see [SUPPORT.md](SUPPORT.md) and [ROADMAP.md](ROADMAP.md); contributions follow the [Code of Conduct](CODE_OF_CONDUCT.md). Automated tests cover representative platforms and fixtures, not every provider combination or production workload.
 
 ## License
 
