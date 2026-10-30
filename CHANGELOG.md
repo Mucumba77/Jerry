@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.1.3
+
+- Reduce the centered login logo to 65% and the sidebar logo to 50% of their previous size.
+- Reduce the logo shown in the project README to 50% of its previous size.
+
 ## 2.1.2
 
 - Add the Jerry mouse and monitoring logo to the application, login pages and project README.
