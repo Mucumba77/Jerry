@@ -1,5 +1,5 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"><modelVersion>4.0.0</modelVersion>
-  <parent><groupId>de.mucumba.jerry</groupId><artifactId>jerry</artifactId><version>2.1.3</version></parent><artifactId>jerry-core</artifactId>
+  <parent><groupId>de.mucumba.jerry</groupId><artifactId>jerry</artifactId><version>2.1.4</version></parent><artifactId>jerry-core</artifactId>
   <dependencies>
     <dependency><groupId>com.fasterxml.jackson.core</groupId><artifactId>jackson-databind</artifactId></dependency>
     <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><scope>test</scope></dependency>
