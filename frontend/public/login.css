@@ -47,9 +47,9 @@ body {
 }
 .brand {
   position: relative;
-  width: 230px;
+  width: 149.5px;
   max-width: 100%;
-  height: 132px;
+  height: 85.8px;
   overflow: hidden;
   border-radius: 8px;
   margin: 0 auto 28px;
@@ -214,8 +214,8 @@ footer {
     display: none;
   }
   .brand {
-    width: 170px;
-    height: 98px;
+    width: 110.5px;
+    height: 63.7px;
   }
   .login-area {
     padding: 48px 26px;
