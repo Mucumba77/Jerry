@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.1.4
+
+- Align the sidebar logo with the start of the navigation, respecting the interface direction.
+
 ## 2.1.3
 
 - Reduce the centered login logo to 65% and the sidebar logo to 50% of their previous size.
