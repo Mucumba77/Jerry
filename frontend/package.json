@@ -16,7 +16,7 @@
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.38.0",
     "@lezer/highlight": "^1.2.1",
-    "lucide-react": "^0.468.0",
+    "lucide-react": "^1.62.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "sql-formatter": "^15.6.10"
