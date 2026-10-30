@@ -114,7 +114,7 @@ p {
 .brand {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   padding: 22px 24px 25px;
 }
 .brand-logo {
