@@ -254,11 +254,12 @@ public final class LogService implements AutoCloseable {
     Path source = resolve(id), file = readable(source);
     boolean trackLineEnd = source.equals(file) && !"previous".equals(direction);
     Charset charset = charset(encoding);
-    long length = Files.size(file);
     BasicFileAttributes attrs = Files.readAttributes(file, BasicFileAttributes.class);
+    long length = attrs.size();
+    Object fileKey = attrs.fileKey();
+    // Java 8 may report the modification time when the file system has no creation time.
     String currentIdentity =
-        Audit.fingerprint(
-            file + ":" + attrs.creationTime().toMillis() + ":" + String.valueOf(attrs.fileKey()));
+        Audit.fingerprint(file + ":" + (fileKey == null ? attrs.creationTime() : fileKey));
     boolean rotated =
         cursor > length
             || (identity != null && !identity.isEmpty() && !identity.equals(currentIdentity));

@@ -72,11 +72,16 @@ async function checkLogFollow() {
     assert.equal(waiting.next, preview.followCursor);
     await fs.appendFile(file, 'ße\n');
     const complete = await api(follow);
+    assert.equal(complete.rotated, false, 'Appending must preserve the current file identity');
     assert.deepEqual(complete.lines.map(line => line.text), ['Grüße']);
+    await fs.writeFile(file, 'Reset\n');
+    const reset = await api(`${endpoint}?follow=true&cursor=${complete.next}&identity=${encodeURIComponent(complete.identity)}`);
+    assert.equal(reset.rotated, true);
+    assert.deepEqual(reset.lines.map(line => line.text), ['Reset']);
   } finally {
     await fs.unlink(file);
   }
-  console.log('PASS Live log waits for a complete line');
+  console.log('PASS Live log completes the pending line and detects truncation');
 }
 
 async function checkPlatform(server) {

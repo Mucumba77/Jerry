@@ -83,6 +83,8 @@ class LogServiceTest {
         Files.write(
             file, Arrays.copyOfRange(complete, split, complete.length), StandardOpenOption.APPEND);
         Map<String, Object> next = service.read(id, cursor, 50, encoding, identity, null, true);
+        assertFalse((Boolean) next.get("rotated"));
+        assertEquals(identity, next.get("identity"));
         List<?> lines = (List<?>) next.get("lines");
         assertEquals(2, lines.size());
         assertEquals("Grüße", ((Map<?, ?>) lines.get(0)).get("text"));
