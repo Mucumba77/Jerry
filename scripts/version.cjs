@@ -8,7 +8,7 @@ if (!match || !/^[0-9]+\.[0-9]+\.[0-9]+(?:-[A-Za-z0-9.]+)?$/.test(match[1])) {
   throw new Error('Cannot determine a safe Jerry version from the root pom.xml');
 }
 const version = match[1];
-for (const module of ['jerry-core', 'jerry-tomcat85', 'jerry-web', 'jerry-instrumentation']) {
+for (const module of ['jerry-core', 'jerry-tomcat85', 'jerry-web', 'jerry-instrumentation', 'jerry-tomcat11']) {
   const xml = fs.readFileSync(path.join(root, module, 'pom.xml'), 'utf8');
   const parent = xml.match(/<parent>[\s\S]*?<artifactId>jerry<\/artifactId>\s*<version>([^<]+)<\/version>/);
   if (!parent || parent[1] !== version) throw new Error(`${module} parent version does not match ${version}`);

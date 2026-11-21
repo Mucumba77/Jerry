@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.1.5
+
+- Build the Tomcat 11 WAR directly against Tomcat 11 and Jakarta Servlet 6.1 with Java 17 through the `jerry-tomcat11` Maven module.
+- Collect registered JMX pool metrics in the background before anyone opens the Data Sources view. Global resources and their ResourceLinks share a pool identity.
+- Open SQL workspaces concurrently across independent pools. Return JDBC connections that arrive after the request times out.
+- Keep incomplete lines pending in live logs and display them when the line ending is written.
+
 ## 2.1.4
 
 - Align the sidebar logo with the start of the navigation, respecting the interface direction.

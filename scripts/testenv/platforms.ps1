@@ -1,3 +1,7 @@
+param(
+  [ValidateSet('tomcat85','tomcat9','tomcat100','tomcat101','tomcat11')]
+  [string[]]$Family = @('tomcat85','tomcat9','tomcat100','tomcat101','tomcat11')
+)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $projectVersion = & node "$root/scripts/version.cjs"
@@ -5,7 +9,13 @@ if ($LASTEXITCODE) { throw 'Project versions are inconsistent.' }
 $platforms = Join-Path $root '.tools/platforms'
 $java8 = (Get-ChildItem "$root/.tools/java8" -Directory | Select-Object -First 1).FullName
 $java11 = (Get-ChildItem "$platforms/java11" -Directory | Select-Object -First 1).FullName
-$java17 = (Get-ChildItem "$platforms/java17" -Directory | Select-Object -First 1).FullName
+$java17 = $env:JAVA17_HOME
+if (-not $java17) {
+  $localJdk17 = Get-ChildItem "$root/.tools/jdk17" -Directory -ErrorAction SilentlyContinue |
+    Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName 'bin/java.exe') } |
+    Select-Object -First 1
+  $java17 = if ($localJdk17) { $localJdk17.FullName } else { (Get-ChildItem "$platforms/java17" -Directory | Select-Object -First 1).FullName }
+}
 $fixture = Join-Path $platforms 'fixture-src'
 New-Item -ItemType Directory -Force "$fixture/WEB-INF/classes", "$fixture/WEB-INF/lib", "$fixture/META-INF" | Out-Null
 $servlet = Join-Path $root '.tools/apache-tomcat-8.5.100/lib/servlet-api.jar'
@@ -29,7 +39,7 @@ $targets=@(
   @{version='10.1.61'; family='tomcat101'; java=$java11; port=16862; shutdown=16872; fixture=$fixtureJakarta},
   @{version='11.0.27'; family='tomcat11'; java=$java17; port=16863; shutdown=16873; fixture=$fixtureJakarta}
 )
-foreach($target in $targets) {
+foreach($target in ($targets | Where-Object { $_.family -in $Family })) {
   if(Get-NetTCPConnection -State Listen -LocalPort $target.port -ErrorAction SilentlyContinue){throw "Test port $($target.port) is occupied"}
   if(Get-NetTCPConnection -State Listen -LocalPort $target.shutdown -ErrorAction SilentlyContinue){throw "Shutdown port $($target.shutdown) is occupied"}
   $tomcatHome=if($target.version -eq '8.5.100') { Join-Path $root '.tools/apache-tomcat-8.5.100' } else { Join-Path $platforms "tomcat-$($target.version)/apache-tomcat-$($target.version)" }
@@ -49,6 +59,7 @@ foreach($target in $targets) {
  <GlobalNamingResources>
   <Resource name="UserDatabase" auth="Container" type="org.apache.catalina.UserDatabase" factory="org.apache.catalina.users.MemoryUserDatabaseFactory" pathname="conf/tomcat-users.xml"/>
   <Resource name="jdbc/JerryDemo" auth="Container" type="javax.sql.DataSource" factory="org.apache.tomcat.jdbc.pool.DataSourceFactory" driverClassName="org.h2.Driver" url="jdbc:h2:mem:jerry;DB_CLOSE_DELAY=-1" username="sa" password="" maxActive="12" initialSize="1" jmxEnabled="true"/>
+  <Resource name="jdbc/JerrySingle" auth="Container" type="javax.sql.DataSource" factory="org.apache.tomcat.jdbc.pool.DataSourceFactory" driverClassName="org.h2.Driver" url="jdbc:h2:mem:jerry_single" username="sa" password="" maxActive="1" initialSize="0" minIdle="0" maxWait="10000" jmxEnabled="true"/>
  </GlobalNamingResources>
  <Service name="Catalina"><Connector address="127.0.0.1" port="$($target.port)" protocol="HTTP/1.1"/>
   <Engine name="Catalina" defaultHost="localhost"><Realm className="org.apache.catalina.realm.UserDatabaseRealm" resourceName="UserDatabase"/>
@@ -57,7 +68,7 @@ foreach($target in $targets) {
 </Server>
 "@
   [IO.File]::WriteAllText("$base/conf/server.xml",$server,[Text.UTF8Encoding]::new($false))
-  [IO.File]::WriteAllText("$base/conf/jerry.properties","monitor.interval.seconds=2`n",[Text.UTF8Encoding]::new($false))
+  [IO.File]::WriteAllText("$base/conf/jerry.properties","monitor.interval.seconds=2`nmonitor.pool.interval.seconds=10`n",[Text.UTF8Encoding]::new($false))
   $arguments=@('-Xms64m','-Xmx384m',"-Dcatalina.home=$tomcatHome","-Dcatalina.base=$base","-Djava.io.tmpdir=$base/temp",'-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager',"-Djava.util.logging.config.file=$base/conf/logging.properties",'-classpath',"$tomcatHome/bin/bootstrap.jar;$tomcatHome/bin/tomcat-juli.jar",'org.apache.catalina.startup.Bootstrap','start')
   $quoted=$arguments | ForEach-Object {'"'+$_+'"'}
   $process=Start-Process -FilePath "$($target.java)/bin/java.exe" -ArgumentList $quoted -WorkingDirectory $base -WindowStyle Hidden -RedirectStandardOutput "$base/console.out.log" -RedirectStandardError "$base/console.err.log" -PassThru
@@ -66,6 +77,8 @@ foreach($target in $targets) {
     for($i=0;$i -lt 45;$i++){if($process.HasExited){throw "Tomcat $($target.version) exited. See $base/console.err.log"};try{$reply=Invoke-WebRequest "http://127.0.0.1:$($target.port)/jerry/login.html" -UseBasicParsing -TimeoutSec 2;if($reply.StatusCode -eq 200){$ready=$true;break}}catch{};Start-Sleep -Seconds 1}
     if(!$ready){throw "Tomcat $($target.version) did not start; see $base/console.err.log"}
     $env:JERRY_TEST_PORT=$target.port; $env:JERRY_TEST_VERSION=$target.version; $env:JERRY_TEST_PASSWORD=$password
+    $env:JERRY_TEST_LOG_DIR=Join-Path $base 'logs'
+    $env:JERRY_TEST_WEBAPP_DIR=Join-Path $base 'webapps/jerry'
     node "$PSScriptRoot/verify-platform.cjs"
     if($LASTEXITCODE){throw "Platform checks failed for Tomcat $($target.version); see $base/console.err.log"}
   } finally {

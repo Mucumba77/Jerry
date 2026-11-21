@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>de.mucumba.jerry</groupId>
+    <artifactId>jerry</artifactId>
+    <version>2.1.5</version>
+  </parent>
+  <artifactId>jerry-tomcat11</artifactId>
+  <packaging>war</packaging>
+  <name>Jerry for Tomcat 11</name>
+
+  <properties>
+    <maven.compiler.release>17</maven.compiler.release>
+    <tomcat11.version>11.0.27</tomcat11.version>
+    <jerry.root>${project.basedir}/..</jerry.root>
+    <jerry.jakarta.sources>${project.build.directory}/generated-sources/jakarta</jerry.jakarta.sources>
+    <jerry.jakarta.webapp>${project.build.directory}/generated-webapp</jerry.jakarta.webapp>
+    <jerry.jakarta.sdk>${project.build.directory}/instrumentation</jerry.jakarta.sdk>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>de.mucumba.jerry</groupId>
+      <artifactId>jerry-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>de.mucumba.jerry</groupId>
+      <artifactId>jerry-instrumentation</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tomcat</groupId>
+      <artifactId>tomcat-catalina</artifactId>
+      <version>${tomcat11.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tomcat</groupId>
+      <artifactId>tomcat-jasper</artifactId>
+      <version>${tomcat11.version}</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <finalName>jerry</finalName>
+    <sourceDirectory>${jerry.jakarta.sources}</sourceDirectory>
+    <resources>
+      <resource>
+        <directory>${jerry.root}/jerry-web/src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>3.2.0</version>
+        <dependencies>
+          <dependency>
+            <groupId>org.apache.tomcat</groupId>
+            <artifactId>jakartaee-migration</artifactId>
+            <version>1.0.13</version>
+            <classifier>shaded</classifier>
+          </dependency>
+        </dependencies>
+        <executions>
+          <execution>
+            <id>stage-jakarta-sources</id>
+            <phase>generate-sources</phase>
+            <goals><goal>run</goal></goals>
+            <configuration>
+              <target>
+                <!-- Share the web and monitoring code while compiling against this container's APIs. -->
+                <sync todir="${jerry.jakarta.sources}" overwrite="true">
+                  <fileset dir="${jerry.root}/jerry-web/src/main/java" includes="**/*.java"/>
+                  <fileset dir="${jerry.root}/jerry-tomcat85/src/main/java" includes="**/*.java"
+                           excludes="**/ContextBinding.java"/>
+                  <fileset dir="${project.basedir}/src/main/java" includes="**/*.java"/>
+                </sync>
+                <replace dir="${jerry.jakarta.sources}" includes="**/*.java" encoding="UTF-8"
+                         token="javax.servlet." value="jakarta.servlet."/>
+              </target>
+            </configuration>
+          </execution>
+          <execution>
+            <id>stage-jakarta-webapp</id>
+            <phase>prepare-package</phase>
+            <goals><goal>run</goal></goals>
+            <configuration>
+              <target>
+                <available file="${jerry.root}/frontend/dist/index.html" property="jerry.frontend.built"/>
+                <fail unless="jerry.frontend.built" message="Build the frontend with npm ci and npm run build before packaging Jerry."/>
+                <sync todir="${jerry.jakarta.webapp}" overwrite="true">
+                  <fileset dir="${jerry.root}/jerry-web/src/main/webapp"/>
+                </sync>
+                <replace file="${jerry.jakarta.webapp}/WEB-INF/web.xml" encoding="UTF-8">
+                  <replacefilter token="http://xmlns.jcp.org/xml/ns/javaee" value="https://jakarta.ee/xml/ns/jakartaee"/>
+                  <replacefilter token='version="3.1"' value='version="6.1"'/>
+                </replace>
+                <!-- The optional SDK is distributed for Jakarta and for clients that still use javax.jms. -->
+                <mkdir dir="${jerry.jakarta.sdk}"/>
+                <java classname="org.apache.tomcat.jakartaee.MigrationCLI" classpathref="maven.plugin.classpath"
+                      fork="true" failonerror="true">
+                  <arg value="-profile=EE"/>
+                  <arg file="${de.mucumba.jerry:jerry-instrumentation:jar}"/>
+                  <arg file="${jerry.jakarta.sdk}/jerry-instrumentation-${project.version}.jar"/>
+                </java>
+                <java classname="org.apache.tomcat.jakartaee.MigrationCLI" classpathref="maven.plugin.classpath"
+                      fork="true" failonerror="true">
+                  <arg value="-profile=TOMCAT"/>
+                  <arg file="${de.mucumba.jerry:jerry-instrumentation:jar}"/>
+                  <arg file="${jerry.jakarta.sdk}/jerry-instrumentation-${project.version}-legacy-jms.jar"/>
+                </java>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-war-plugin</artifactId>
+        <configuration>
+          <warSourceDirectory>${jerry.jakarta.webapp}</warSourceDirectory>
+          <webResources>
+            <resource>
+              <directory>${jerry.root}/frontend/dist</directory>
+            </resource>
+            <resource>
+              <directory>${jerry.jakarta.sdk}</directory>
+              <targetPath>instrumentation</targetPath>
+              <includes>
+                <include>jerry-instrumentation-${project.version}.jar</include>
+                <include>jerry-instrumentation-${project.version}-legacy-jms.jar</include>
+              </includes>
+            </resource>
+            <resource>
+              <directory>${jerry.root}</directory>
+              <targetPath>META-INF</targetPath>
+              <includes><include>LICENSE</include><include>NOTICE.md</include></includes>
+            </resource>
+          </webResources>
+          <archive>
+            <manifestEntries>
+              <Implementation-Title>Jerry</Implementation-Title>
+              <Implementation-Version>${project.version}</Implementation-Version>
+              <Jerry-Target-Tomcat>11.0</Jerry-Target-Tomcat>
+              <Jerry-Build>native</Jerry-Build>
+            </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

@@ -7,7 +7,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/** One bounded worker reads already-observed pool getters; never starts or borrows a connection. */
+/** One bounded worker reads existing pool counters without opening database connections. */
 public final class PoolCollector implements AutoCloseable {
   private final TomcatAdapter tomcat;
   private final ThreadPoolExecutor worker =
@@ -37,7 +37,7 @@ public final class PoolCollector implements AutoCloseable {
       worker.execute(
           () -> {
             try {
-              List<Map<String, Object>> next = tomcat.observedPoolMetrics();
+              List<Map<String, Object>> next = tomcat.poolMetrics();
               if (!closed) {
                 pools = next;
                 sampledAt = System.currentTimeMillis();
@@ -71,7 +71,7 @@ public final class PoolCollector implements AutoCloseable {
         "pools",
         stale ? Collections.emptyList() : pools,
         "limit",
-        64);
+        TomcatAdapter.POOL_SOURCE_LIMIT);
   }
 
   @Override

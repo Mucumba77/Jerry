@@ -21,6 +21,8 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -30,7 +32,10 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import javax.management.Attribute;
+import javax.management.JMException;
 import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import javax.naming.InitialContext;
 import javax.servlet.RequestDispatcher;
@@ -53,8 +58,15 @@ import org.apache.tomcat.util.descriptor.web.ContextResourceLink;
 import org.apache.tomcat.util.descriptor.web.FilterDef;
 import org.apache.tomcat.util.descriptor.web.FilterMap;
 
-/** The only module that imports Catalina. No application services depend on Tomcat internals. */
+/** Integrates Jerry with the Catalina APIs exposed by the running Tomcat instance. */
 public final class TomcatAdapter implements DataSources, AutoCloseable {
+  static final int POOL_SOURCE_LIMIT = 64;
+  private static final String[] POOL_ATTRIBUTES = {
+    "active", "numActive", "Active", "ActiveConnections", "NumActive",
+    "idle", "numIdle", "Idle", "IdleConnections", "NumIdle",
+    "maxActive", "maxTotal", "MaxActive", "MaxTotal", "MaximumPoolSize",
+    "waitCount", "WaitCount", "ThreadsAwaitingConnection"
+  };
   private final Context self;
   private final Engine engine;
   private final Config config;
@@ -69,6 +81,17 @@ public final class TomcatAdapter implements DataSources, AutoCloseable {
   private static final class Source {
     String app, name, configuredName;
     boolean readOnly;
+  }
+
+  private static final class PoolBinding {
+    final String id, name;
+    final ObjectName bean;
+
+    PoolBinding(String scope, String name, ObjectName bean) {
+      id = encode(scope + "\n" + name);
+      this.name = name;
+      this.bean = bean;
+    }
   }
 
   public TomcatAdapter(Wrapper wrapper, Config config, ApplicationTelemetry telemetry) {
@@ -817,7 +840,7 @@ public final class TomcatAdapter implements DataSources, AutoCloseable {
     DataSource source = (DataSource) value;
     synchronized (observedPools) {
       observedPools.entrySet().removeIf(entry -> entry.getValue().get() == null);
-      if (observedPools.size() < 64 || observedPools.containsKey(id)) {
+      if (observedPools.size() < POOL_SOURCE_LIMIT || observedPools.containsKey(id)) {
         observedPools.put(id, new java.lang.ref.WeakReference<>(source));
         if (!poolIdentities.containsKey(source))
           poolIdentities.put(source, UUID.randomUUID().toString());
@@ -828,11 +851,11 @@ public final class TomcatAdapter implements DataSources, AutoCloseable {
 
   private Object lookupApplicationDataSource(Context context, String name) throws Exception {
     String localName = localJndiName(name);
-    ClassLoader previous = context.bind(false, null);
+    ClassLoader previous = ContextBinding.bind(context);
     try {
       return new InitialContext().lookup("java:comp/env/" + localName);
     } finally {
-      context.unbind(false, previous);
+      ContextBinding.unbind(context, previous);
     }
   }
 
@@ -895,8 +918,9 @@ public final class TomcatAdapter implements DataSources, AutoCloseable {
             "getPendingRequestsCount"));
   }
 
-  /** Only reads sources already resolved by Jerry; never looks up JNDI or opens a connection. */
-  public List<Map<String, Object>> observedPoolMetrics() {
+  /** Samples registered pool counters and already resolved sources without using JNDI. */
+  public List<Map<String, Object>> poolMetrics() {
+    List<PoolBinding> bindings = poolBindings();
     Map<String, DataSource> sources = new LinkedHashMap<>();
     synchronized (observedPools) {
       observedPools.entrySet().removeIf(entry -> entry.getValue().get() == null);
@@ -906,37 +930,110 @@ public final class TomcatAdapter implements DataSources, AutoCloseable {
         if (source != null) sources.put(entry.getKey(), source);
       }
     }
-    java.util.IdentityHashMap<DataSource, Map<String, Object>> readOnce =
-        new java.util.IdentityHashMap<>();
+    Map<ObjectName, DataSource> knownPools = new HashMap<>();
+    for (PoolBinding binding : bindings) {
+      DataSource source = sources.get(binding.id);
+      if (source != null) knownPools.putIfAbsent(binding.bean, source);
+    }
+    Map<ObjectName, Map<String, Object>> jmx = new HashMap<>();
+    Map<DataSource, Map<String, Object>> direct = new IdentityHashMap<>();
     List<Map<String, Object>> result = new ArrayList<>();
-    for (Map.Entry<String, DataSource> entry : sources.entrySet()) {
-      DataSource source = entry.getValue();
-      Map<String, Object> values = readOnce.get(source);
-      if (values == null) {
-        values = poolValues(source);
-        readOnce.put(source, values);
+    for (PoolBinding binding : bindings) {
+      Map<String, Object> values = jmx.computeIfAbsent(binding.bean, this::jmxPoolValues);
+      String poolId = "jmx:" + binding.bean.getCanonicalName();
+      if (values.get("active") == null && values.get("idle") == null) {
+        DataSource source = knownPools.get(binding.bean);
+        if (source != null) {
+          values = direct.computeIfAbsent(source, this::poolValues);
+          synchronized (observedPools) {
+            poolId = poolIdentities.get(source);
+          }
+        }
       }
       if (!(values.get("active") instanceof Number)
           && !(values.get("idle") instanceof Number)
           && !(values.get("max") instanceof Number)) continue;
-      String poolId;
-      synchronized (observedPools) {
-        poolId = poolIdentities.get(source);
-      }
       Map<String, Object> row = new LinkedHashMap<>(values);
       row.remove("className");
-      row.put("id", entry.getKey());
+      row.put("id", binding.id);
+      row.put("name", binding.name);
       row.put("poolId", poolId);
-      try {
-        String decoded =
-            new String(Base64.getUrlDecoder().decode(entry.getKey()), StandardCharsets.UTF_8);
-        int split = decoded.indexOf('\n');
-        if (split >= 0) row.put("name", decoded.substring(split + 1));
-      } catch (IllegalArgumentException ignored) {
-      }
       result.add(row);
     }
     return result;
+  }
+
+  private List<PoolBinding> poolBindings() {
+    List<PoolBinding> bindings = new ArrayList<>();
+    Map<String, ObjectName> global = new HashMap<>();
+    for (ContextResource resource :
+        engine.getService().getServer().getGlobalNamingResources().findResources()) {
+      if (bindings.size() >= POOL_SOURCE_LIMIT) return bindings;
+      ObjectName bean = poolBean(resource, null);
+      if (bean == null) continue;
+      global.put(resource.getName(), bean);
+      bindings.add(new PoolBinding("global", resource.getName(), bean));
+    }
+    List<Context> contexts = contexts();
+    for (Context context : contexts) {
+      for (ContextResource resource : context.getNamingResources().findResources()) {
+        if (bindings.size() >= POOL_SOURCE_LIMIT) return bindings;
+        ObjectName bean = poolBean(resource, context);
+        if (bean != null) bindings.add(new PoolBinding(id(context), resource.getName(), bean));
+      }
+    }
+    for (Context context : contexts) {
+      for (ContextResourceLink link : context.getNamingResources().findResourceLinks()) {
+        if (bindings.size() >= POOL_SOURCE_LIMIT) return bindings;
+        ObjectName bean = global.get(link.getGlobal());
+        if (bean != null && isDataSource(link.getType()))
+          bindings.add(new PoolBinding(id(context), link.getName(), bean));
+      }
+    }
+    return bindings;
+  }
+
+  private ObjectName poolBean(ContextResource resource, Context context) {
+    if (!isDataSource(resource.getType())) return null;
+    Hashtable<String, String> properties = new Hashtable<>();
+    properties.put("type", "DataSource");
+    properties.put("class", resource.getType());
+    properties.put("name", ObjectName.quote(resource.getName()));
+    if (context != null) {
+      String name = context.getName();
+      properties.put("context", name.startsWith("/") ? name : "/" + name);
+      properties.put("host", context.getParent().getName());
+    }
+    try {
+      ObjectName bean = new ObjectName(engine.getDomain(), properties);
+      return bean.isPattern() ? null : bean;
+    } catch (MalformedObjectNameException exception) {
+      return null;
+    }
+  }
+
+  private Map<String, Object> jmxPoolValues(ObjectName bean) {
+    Map<String, Object> attributes = new HashMap<>();
+    try {
+      for (Attribute attribute : mbeans.getAttributes(bean, POOL_ATTRIBUTES).asList())
+        if (attribute.getValue() instanceof Number)
+          attributes.put(attribute.getName().toLowerCase(Locale.ROOT), attribute.getValue());
+    } catch (JMException | RuntimeException ignored) {
+      return Collections.emptyMap();
+    }
+    return Json.map(
+        "active", firstAttribute(attributes, "numactive", "active", "activeconnections"),
+        "idle", firstAttribute(attributes, "numidle", "idle", "idleconnections"),
+        "max", firstAttribute(attributes, "maxtotal", "maxactive", "maximumpoolsize"),
+        "waiting", firstAttribute(attributes, "waitcount", "threadsawaitingconnection"));
+  }
+
+  private static Object firstAttribute(Map<String, Object> attributes, String... names) {
+    for (String name : names) {
+      Object value = attributes.get(name);
+      if (value != null) return value;
+    }
+    return null;
   }
 
   public void resetPool(String id) throws Exception {
@@ -1229,11 +1326,11 @@ public final class TomcatAdapter implements DataSources, AutoCloseable {
                 throw new IOException("HTTP " + code);
               }
             };
-        ClassLoader previous = context.bind(false, null);
+        ClassLoader previous = ContextBinding.bind(context);
         try {
           dispatcher.include(wrapped, sink);
         } finally {
-          context.unbind(false, previous);
+          ContextBinding.unbind(context, previous);
         }
         results.add(
             Json.map(

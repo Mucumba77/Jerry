@@ -21,6 +21,8 @@ monitor.application.budgetMs=1000
 # monitor.jmx.APPLICATION_ID.patterns=your.domain:application=your-app,*
 
 sql.workers=4
+sql.open.workers=4
+sql.open.timeout.seconds=15
 sql.sessions.max=16
 sql.sessions.perSource=4
 sql.idle.minutes=5
