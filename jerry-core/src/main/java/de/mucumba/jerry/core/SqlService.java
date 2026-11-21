@@ -16,22 +16,30 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.SQLTimeoutException;
 import java.sql.SQLWarning;
 import java.sql.Savepoint;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.sql.DataSource;
@@ -43,11 +51,34 @@ public final class SqlService implements AutoCloseable {
   private final DataSources sources;
   private final Path root;
   private final ConcurrentMap<String, Workspace> workspaces = new ConcurrentHashMap<>();
+  private final Set<Opening> openings = new HashSet<>();
+  private final ThreadPoolExecutor openers;
   private final ThreadPoolExecutor workers;
   private final ThreadPoolExecutor cancellations;
   private final AtomicLong spoolBytes = new AtomicLong();
   private final long spoolLimit;
-  private volatile boolean stopped;
+  // Admission and publication are guarded by openings. JDBC calls never hold that lock.
+  private boolean stopped;
+
+  private static final class Opening {
+    final String owner, user, source;
+    final boolean readOnly;
+    final CompletableFuture<Workspace> result = new CompletableFuture<>();
+    // The worker owns the lease until the request decides whether to keep it.
+    final CompletableFuture<Boolean> accepted = new CompletableFuture<>();
+
+    Opening(String owner, String user, String source, boolean readOnly) {
+      this.owner = owner;
+      this.user = user;
+      this.source = source;
+      this.readOnly = readOnly;
+    }
+
+    void cancel() {
+      accepted.complete(false);
+      result.completeExceptionally(new IllegalStateException("SQL-Verbindungsaufbau beendet."));
+    }
+  }
 
   static final class Workspace {
     final String id = UUID.randomUUID().toString(), owner, user, source;
@@ -94,8 +125,6 @@ public final class SqlService implements AutoCloseable {
       dialect = dialect(product);
       if (!connection.getMetaData().supportsTransactions())
         throw new SQLException("Diese Datenquelle unterstützt keine Transaktionen.");
-      connection.setReadOnly(readOnly);
-      connection.setAutoCommit(false);
     }
   }
 
@@ -213,6 +242,15 @@ public final class SqlService implements AutoCloseable {
       for (Path path : paths) Files.deleteIfExists(path);
     }
     int concurrency = config.number("sql.workers", 4, 1, 16);
+    int connectConcurrency = config.number("sql.open.workers", 4, 2, 16);
+    openers =
+        new ThreadPoolExecutor(
+            0,
+            connectConcurrency,
+            30,
+            TimeUnit.SECONDS,
+            new SynchronousQueue<Runnable>(),
+            new Workers("sql-open"));
     workers =
         new ThreadPoolExecutor(
             concurrency,
@@ -235,40 +273,107 @@ public final class SqlService implements AutoCloseable {
   }
 
   /** Opens an owner-bound JDBC workspace with auto-commit disabled. */
-  public synchronized Map<String, Object> open(
-      String owner, String user, String source, boolean readOnlyOnly) throws Exception {
-    if (stopped) throw new IllegalStateException("Jerry wird beendet.");
-    if (workspaces.size() >= config.number("sql.sessions.max", 16, 1, 64))
-      throw new IllegalStateException("Maximale Anzahl SQL-Verbindungen erreicht.");
-    int owned = 0, sameSource = 0;
-    for (Workspace workspace : workspaces.values()) {
-      if (workspace.owner.equals(owner)) owned++;
-      if (workspace.source.equals(source)) sameSource++;
-    }
-    if (owned >= 4 || sameSource >= config.number("sql.sessions.perSource", 4, 1, 16))
-      throw new IllegalStateException("Verbindungslimit pro Benutzer oder Datenquelle erreicht.");
+  public Map<String, Object> open(String owner, String user, String source, boolean readOnlyOnly)
+      throws Exception {
     if (readOnlyOnly && !sources.enforcedReadOnly(source))
       throw new SecurityException(
           "SQL-Leserechte erfordern eine separat konfigurierte Datenquelle mit datenbankseitig erzwungenen Leserechten.");
-    DataSource dataSource = sources.resolve(source);
-    Connection connection = dataSource.getConnection();
+    Opening opening = new Opening(owner, user, source, readOnlyOnly);
+    reserve(opening);
     try {
-      Workspace workspace = new Workspace(owner, user, source, connection, readOnlyOnly);
+      try {
+        openers.execute(() -> connect(opening));
+      } catch (RejectedExecutionException exception) {
+        synchronized (openings) {
+          openings.remove(opening);
+        }
+        throw new IllegalStateException("Zu viele gleichzeitige SQL-Verbindungsaufbauten.");
+      }
+      Workspace workspace =
+          opening.result.get(
+              config.number("sql.open.timeout.seconds", 15, 1, 120), TimeUnit.SECONDS);
+      synchronized (openings) {
+        if (stopped || opening.accepted.isDone())
+          throw new IllegalStateException("SQL-Verbindungsaufbau beendet.");
+        workspaces.put(workspace.id, workspace);
+        openings.remove(opening);
+        opening.accepted.complete(true);
+      }
+      audit.event(user, "sql.open", source, "OK");
+      return status(workspace);
+    } catch (TimeoutException exception) {
+      throw new SQLTimeoutException(
+          "Zeitlimit beim Aufbau der SQL-Verbindung überschritten.", "HYT00");
+    } catch (InterruptedException exception) {
+      Thread.currentThread().interrupt();
+      throw new SQLException("SQL-Verbindungsaufbau unterbrochen.", "HY008", exception);
+    } catch (ExecutionException exception) {
+      Throwable cause = exception.getCause();
+      if (cause instanceof Exception) throw (Exception) cause;
+      throw new SQLException("SQL-Verbindung konnte nicht aufgebaut werden.", cause);
+    } finally {
+      opening.accepted.complete(false);
+    }
+  }
+
+  private void reserve(Opening opening) {
+    synchronized (openings) {
+      if (stopped) throw new IllegalStateException("Jerry wird beendet.");
+      if (workspaces.size() + openings.size() >= config.number("sql.sessions.max", 16, 1, 64))
+        throw new IllegalStateException("Maximale Anzahl SQL-Verbindungen erreicht.");
+      int owned = 0, sameSource = 0;
+      for (Workspace workspace : workspaces.values()) {
+        if (workspace.owner.equals(opening.owner)) owned++;
+        if (workspace.source.equals(opening.source)) sameSource++;
+      }
+      for (Opening pending : openings) {
+        if (pending.owner.equals(opening.owner)) owned++;
+        if (pending.source.equals(opening.source)) sameSource++;
+      }
+      if (owned >= 4 || sameSource >= config.number("sql.sessions.perSource", 4, 1, 16))
+        throw new IllegalStateException("Verbindungslimit pro Benutzer oder Datenquelle erreicht.");
+      openings.add(opening);
+    }
+  }
+
+  private void connect(Opening opening) {
+    Thread thread = Thread.currentThread();
+    ClassLoader previous = thread.getContextClassLoader();
+    Connection connection = null;
+    Workspace workspace = null;
+    try {
+      if (opening.accepted.isDone()) return;
+      thread.setContextClassLoader(SqlService.class.getClassLoader());
+      DataSource source = sources.resolve(opening.source);
+      if (opening.accepted.isDone()) return;
+      connection = source.getConnection();
+      if (opening.accepted.isDone()) return;
+      workspace =
+          new Workspace(opening.owner, opening.user, opening.source, connection, opening.readOnly);
+      workspace.connection.setReadOnly(workspace.readOnly);
+      workspace.connection.setAutoCommit(false);
       try {
         connection.setNetworkTimeout(
             cancellations, config.number("sql.networkTimeout.seconds", 120, 10, 1800) * 1000);
       } catch (SQLException | AbstractMethodError ignored) {
       }
-      workspaces.put(workspace.id, workspace);
-      audit.event(user, "sql.open", source, "OK");
-      return status(workspace);
-    } catch (Exception exception) {
-      try {
-        connection.rollback();
-      } catch (SQLException ignored) {
+      opening.result.complete(workspace);
+      if (opening.accepted.join()) {
+        workspace = null;
+        connection = null;
       }
-      connection.close();
-      throw exception;
+    } catch (Exception | LinkageError exception) {
+      opening.result.completeExceptionally(exception);
+    } finally {
+      try {
+        if (workspace != null) resetAndClose(workspace);
+        else if (connection != null) closeConnection(connection);
+      } finally {
+        thread.setContextClassLoader(previous);
+        synchronized (openings) {
+          openings.remove(opening);
+        }
+      }
     }
   }
 
@@ -978,8 +1083,13 @@ public final class SqlService implements AutoCloseable {
   }
 
   public void closeOwner(String owner) {
-    for (Workspace workspace : workspaces.values())
-      if (workspace.owner.equals(owner)) closeWorkspace(workspace);
+    List<Workspace> owned = new ArrayList<>();
+    synchronized (openings) {
+      for (Opening opening : openings) if (opening.owner.equals(owner)) opening.cancel();
+      for (Workspace workspace : workspaces.values())
+        if (workspace.owner.equals(owner)) owned.add(workspace);
+    }
+    for (Workspace workspace : owned) closeWorkspace(workspace);
   }
 
   public void reap() {
@@ -1028,6 +1138,15 @@ public final class SqlService implements AutoCloseable {
 
   private void disposeLocked(Workspace workspace) {
     if (!workspaces.remove(workspace.id, workspace)) return;
+    try {
+      resetAndClose(workspace);
+    } finally {
+      deleteResults(workspace);
+    }
+    audit.event(workspace.user, "sql.close", workspace.source, "CLOSED");
+  }
+
+  private void resetAndClose(Workspace workspace) {
     Connection connection = workspace.connection;
     try {
       if (!connection.getAutoCommit()) connection.rollback();
@@ -1051,13 +1170,15 @@ public final class SqlService implements AutoCloseable {
       } catch (SQLException | AbstractMethodError ignored) {
       }
     } finally {
-      try {
-        connection.close();
-      } catch (SQLException ignored) {
-      }
-      deleteResults(workspace);
+      closeConnection(connection);
     }
-    audit.event(workspace.user, "sql.close", workspace.source, "CLOSED");
+  }
+
+  private static void closeConnection(Connection connection) {
+    try {
+      connection.close();
+    } catch (SQLException ignored) {
+    }
   }
 
   private void deleteResults(Workspace workspace) {
@@ -1097,7 +1218,11 @@ public final class SqlService implements AutoCloseable {
 
   @Override
   public void close() {
-    stopped = true;
+    synchronized (openings) {
+      stopped = true;
+      for (Opening opening : openings) opening.cancel();
+    }
+    openers.shutdownNow();
     for (Workspace workspace : workspaces.values()) closeWorkspace(workspace);
     workers.shutdownNow();
     try {

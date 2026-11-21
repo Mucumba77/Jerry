@@ -47,9 +47,10 @@ cat > "$base/conf/server.xml" <<XML
 <Server port="-1"><Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener"/><GlobalNamingResources>
 <Resource name="UserDatabase" auth="Container" type="org.apache.catalina.UserDatabase" factory="org.apache.catalina.users.MemoryUserDatabaseFactory" pathname="conf/tomcat-users.xml"/>
 <Resource name="jdbc/JerryDemo" auth="Container" type="javax.sql.DataSource" factory="org.apache.tomcat.jdbc.pool.DataSourceFactory" driverClassName="org.h2.Driver" url="jdbc:h2:mem:jerry;DB_CLOSE_DELAY=-1" username="sa" password="" maxActive="12" initialSize="1" jmxEnabled="true"/>
+<Resource name="jdbc/JerrySingle" auth="Container" type="javax.sql.DataSource" factory="org.apache.tomcat.jdbc.pool.DataSourceFactory" driverClassName="org.h2.Driver" url="jdbc:h2:mem:jerry_single" username="sa" password="" maxActive="1" initialSize="0" minIdle="0" maxWait="10000" jmxEnabled="true"/>
 </GlobalNamingResources><Service name="Catalina"><Connector address="127.0.0.1" port="$port" protocol="HTTP/1.1"/><Engine name="Catalina" defaultHost="localhost"><Realm className="org.apache.catalina.realm.UserDatabaseRealm" resourceName="UserDatabase"/><Host name="localhost" appBase="webapps" unpackWARs="true" autoDeploy="true"/></Engine></Service></Server>
 XML
-echo 'monitor.interval.seconds=2' > "$base/conf/jerry.properties"
+printf '%s\n' 'monitor.interval.seconds=2' 'monitor.pool.interval.seconds=10' > "$base/conf/jerry.properties"
 "$JAVA_HOME/bin/java" -Xms64m -Xmx384m "-Dcatalina.home=$tomcat" "-Dcatalina.base=$base" "-Djava.io.tmpdir=$base/temp" -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager "-Djava.util.logging.config.file=$base/conf/logging.properties" -classpath "$tomcat/bin/bootstrap.jar:$tomcat/bin/tomcat-juli.jar" org.apache.catalina.startup.Bootstrap start >"$work/tomcat.log" 2>&1 &
 pid=$!
 ready=false
@@ -60,6 +61,8 @@ for _ in {1..60}; do
 done
 if [[ "$ready" != true ]]; then cat "$work/tomcat.log"; exit 1; fi
 export JERRY_TEST_PORT="$port" JERRY_TEST_VERSION="$TOMCAT_VERSION" JERRY_TEST_PASSWORD="$password" JERRY_PROJECT_VERSION="$version"
+export JERRY_TEST_LOG_DIR="$base/logs"
+export JERRY_TEST_WEBAPP_DIR="$base/webapps/jerry"
 if [[ "${JERRY_TEST_BROWSER:-0}" == 1 ]]; then export JERRY_TEST_BROWSER=1; fi
 if ! node "$root/scripts/testenv/verify-platform.cjs"; then cat "$work/tomcat.log"; exit 1; fi
 if [[ "${JERRY_TEST_BROWSER:-0}" == 1 ]]; then

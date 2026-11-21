@@ -10,17 +10,17 @@ The Jerry Wiki explains installation, security, configuration, monitoring, SQL, 
 
 ## Choose a distribution
 
-All platform builds share Jerry version **2.1.4**. Select the WAR that matches your Tomcat family:
+All platform builds share Jerry version **2.1.5**. Select the WAR that matches your Tomcat family:
 
 | WAR | Target | Minimum Java | Servlet namespace |
 | --- | --- | --- | --- |
-| `jerry-2.1.4-tomcat85.war` | Tomcat 8.5 | 8 | `javax` |
-| `jerry-2.1.4-tomcat9.war` | Tomcat 9.0 | 8 | `javax` |
-| `jerry-2.1.4-tomcat100.war` | Tomcat 10.0 | 8 | `jakarta` |
-| `jerry-2.1.4-tomcat101.war` | Tomcat 10.1 | 11 | `jakarta` |
-| `jerry-2.1.4-tomcat11.war` | Tomcat 11.0 | 17 | `jakarta` |
+| `jerry-2.1.5-tomcat85.war` | Tomcat 8.5 | 8 | `javax` |
+| `jerry-2.1.5-tomcat9.war` | Tomcat 9.0 | 8 | `javax` |
+| `jerry-2.1.5-tomcat100.war` | Tomcat 10.0 | 8 | `jakarta` |
+| `jerry-2.1.5-tomcat101.war` | Tomcat 10.1 | 11 | `jakarta` |
+| `jerry-2.1.5-tomcat11.war` | Tomcat 11.0 | 17 | `jakarta` |
 
-Tomcat 8.5 and 10.0 have reached end of support; choose a supported Tomcat release where possible. The Jakarta builds are produced using Apache's Jakarta EE migration tool. Jerry uses Tomcat internals, so verify the intended patch level and providers in a staging environment before production deployment.
+Tomcat 8.5 and 10.0 have reached end of support. The Tomcat 10 builds use Apache's Jakarta EE migration tool. The Tomcat 11 WAR is compiled directly against Tomcat 11 and Jakarta Servlet 6.1 with Java 17. Jerry uses Tomcat internals, so verify the intended patch level and providers in a staging environment before production deployment.
 
 ## Install
 
@@ -61,16 +61,24 @@ These screenshots show Jerry 2.1.2 in an isolated Tomcat test instance with samp
 
 ## Build from source
 
-Build with **JDK 8**, Maven 3.9 and Node.js 22 or later. The generated WARs run on the Java versions in the table above; Node.js is not needed by Tomcat. The build downloads the official Apache Jakarta migration tool as a build dependency.
+Build all distributions with **JDK 8 and JDK 17**, Maven 3.9 and Node.js 22 or later. Tomcat only needs the runtime shown in the table. The build downloads the Apache Jakarta migration tool for Tomcat 10 and the optional Jakarta instrumentation JARs.
 
 ```sh
 export JAVA_HOME=/path/to/jdk8
+export JAVA17_HOME=/path/to/jdk17
 sh build.sh
 ```
 
-On Windows, set `JAVA_HOME` and run `./build.ps1`. Versioned WARs and their SHA-256 files are written to `dist/`. There are separate instrumentation JARs for Java EE, Jakarta EE and Jakarta Servlet applications that still use `javax.jms`. Do not mix an older instrumentation JAR with Jerry 2.0: both the Java package and the bridge identifier changed to `de.mucumba.jerry`.
+On Windows, set `JAVA_HOME` and `JAVA17_HOME` and run `./build.ps1`. Versioned WARs and their SHA-256 files are written to `dist/`. There are separate instrumentation JARs for Java EE, Jakarta EE and Jakarta Servlet applications that still use `javax.jms`. Do not mix an older instrumentation JAR with Jerry 2.0: both the Java package and the bridge identifier changed to `de.mucumba.jerry`.
 
-The source is organized into `jerry-core`, `jerry-tomcat85` (container integration shared by the platform builds), `jerry-web`, `jerry-instrumentation`, and `frontend`. [Architecture and compatibility notes](docs/ARCHITECTURE.md) describe the boundaries and tests. A detailed German reference is retained in [docs/REFERENCE.de.md](docs/REFERENCE.de.md).
+To build a single target, first run `npm ci` and `npm run build` in `frontend`. From the repository root, use one of these Maven builds.
+
+| Target | Maven command | Artifact |
+| --- | --- | --- |
+| Tomcat 8.5 and 9 with JDK 8 | `mvn clean verify` | `jerry-web/target/jerry.war` |
+| Tomcat 11 with JDK 17 | `mvn -Ptomcat11 -pl :jerry-tomcat11 -am clean verify` | `jerry-tomcat11/target/jerry.war` |
+
+[Architecture and compatibility notes](docs/ARCHITECTURE.md) describe the modules and platform tests. A detailed German reference is retained in [docs/REFERENCE.de.md](docs/REFERENCE.de.md).
 
 ## Security and support
 

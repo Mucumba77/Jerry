@@ -3,6 +3,8 @@ set -eu
 cd "$(dirname "$0")"
 node scripts/version.cjs >/dev/null
 : "${JAVA_HOME:?Please set JAVA_HOME to a JDK 8 installation}"
+: "${JAVA17_HOME:?Please set JAVA17_HOME to a JDK 17 installation}"
+export JAVA17_HOME
 export PATH="$JAVA_HOME/bin:$PATH"
 (cd frontend && npm ci --no-audit --no-fund && npm run build)
 if command -v rtk >/dev/null 2>&1; then rtk mvn -B -ntp clean verify; else mvn -B -ntp clean verify; fi

@@ -2,15 +2,20 @@ package de.mucumba.jerry.core;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class LogServiceTest {
   @TempDir Path directory;
@@ -48,6 +53,48 @@ class LogServiceTest {
     } finally {
       System.clearProperty("jerry.data.dir");
       System.clearProperty("jerry.logs.roots");
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"UTF-8", "UTF-16LE"})
+  void followingWaitsForAnIncompleteLineAndItsSplitCharacter(String encoding) throws Exception {
+    Path logs = Files.createDirectory(directory.resolve("logs"));
+    Path file = logs.resolve("active.log");
+    Charset charset = Charset.forName(encoding);
+    byte[] complete = "old line\nGrüße\r\nnext line\n".getBytes(charset);
+    int split = "old line\nGr".getBytes(charset).length + 1;
+    Files.write(file, Arrays.copyOf(complete, split));
+    System.setProperty("jerry.data.dir", directory.resolve("data").toString());
+    System.setProperty("jerry.logs.roots", logs.toString());
+    System.setProperty("jerry.config", directory.resolve("absent.properties").toString());
+    try {
+      Config config = new Config();
+      try (LogService service = new LogService(config, new Audit(config))) {
+        String id = String.valueOf(service.files().get(0).get("id"));
+        Map<String, Object> preview = service.read(id, -1, 50, encoding, null, null);
+        long cursor = ((Number) preview.get("followCursor")).longValue();
+        assertEquals("old line\n".getBytes(charset).length, cursor);
+        String identity = (String) preview.get("identity");
+        Map<String, Object> waiting = service.read(id, cursor, 50, encoding, identity, null, true);
+        assertEquals(cursor, waiting.get("next"));
+        assertEquals(0, ((List<?>) waiting.get("lines")).size());
+
+        Files.write(
+            file, Arrays.copyOfRange(complete, split, complete.length), StandardOpenOption.APPEND);
+        Map<String, Object> next = service.read(id, cursor, 50, encoding, identity, null, true);
+        assertFalse((Boolean) next.get("rotated"));
+        assertEquals(identity, next.get("identity"));
+        List<?> lines = (List<?>) next.get("lines");
+        assertEquals(2, lines.size());
+        assertEquals("Grüße", ((Map<?, ?>) lines.get(0)).get("text"));
+        assertEquals("next line", ((Map<?, ?>) lines.get(1)).get("text"));
+        assertEquals((long) complete.length, next.get("next"));
+      }
+    } finally {
+      System.clearProperty("jerry.data.dir");
+      System.clearProperty("jerry.logs.roots");
+      System.clearProperty("jerry.config");
     }
   }
 

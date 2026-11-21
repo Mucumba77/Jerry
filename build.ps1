@@ -8,6 +8,15 @@ if (-not $env:JAVA_HOME) {
   if ($localJdk) { $env:JAVA_HOME = $localJdk.FullName }
 }
 if (-not $env:JAVA_HOME) { throw 'Set JAVA_HOME to a JDK 8 installation.' }
+if (-not $env:JAVA17_HOME) {
+  $localJdk17 = Get-ChildItem "$PSScriptRoot\.tools\jdk17" -Directory -ErrorAction SilentlyContinue |
+    Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName 'bin/javac.exe') } |
+    Select-Object -First 1
+  if ($localJdk17) { $env:JAVA17_HOME = $localJdk17.FullName }
+}
+if (-not $env:JAVA17_HOME -or -not (Test-Path -LiteralPath (Join-Path $env:JAVA17_HOME 'bin/javac.exe'))) {
+  throw 'Set JAVA17_HOME to a JDK 17 installation for the native Tomcat 11 build.'
+}
 $env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
 $mavenCommand = Get-Command mvn.cmd -ErrorAction SilentlyContinue
 $maven = if ($mavenCommand) { $mavenCommand.Source } else { "$PSScriptRoot\.tools\apache-maven-3.9.9\bin\mvn.cmd" }
@@ -19,6 +28,6 @@ if ($SkipChecks) { $mavenArgs += '-DskipTests' }
 $env:PATH = "$(Split-Path $maven -Parent);$env:PATH"
 if (Get-Command rtk.exe -ErrorAction SilentlyContinue) { & rtk.exe mvn @mavenArgs } else { & $maven @mavenArgs }
 if ($LASTEXITCODE) { throw 'Java build failed' }
-& "$PSScriptRoot/scripts/platform-wars.ps1"
+& "$PSScriptRoot/scripts/platform-wars.ps1" -SkipChecks:$SkipChecks
 & "$PSScriptRoot/scripts/package.ps1"
 Write-Host 'Jerry is ready: dist/jerry.war'

@@ -3,13 +3,22 @@ package de.mucumba.jerry.core;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.ByteArrayOutputStream;
+import java.lang.reflect.Proxy;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.SQLTimeoutException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.sql.DataSource;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.AfterEach;
@@ -54,6 +63,86 @@ class SqlServiceTest {
     if (service != null) service.close();
     System.clearProperty("jerry.data.dir");
     System.clearProperty("jerry.config");
+    System.clearProperty("jerry.sql.open.timeout.seconds");
+    System.clearProperty("jerry.sql.sessions.perSource");
+  }
+
+  @Test
+  void slowPoolDoesNotBlockOpeningAnotherWorkspaceAndCountsAgainstTheSourceLimit()
+      throws Exception {
+    System.setProperty("jerry.sql.sessions.perSource", "1");
+    CountDownLatch entered = new CountDownLatch(1), release = new CountDownLatch(1);
+    installBlockedSource(entered, release, new AtomicReference<Connection>());
+    ExecutorService clients = Executors.newFixedThreadPool(2);
+    try {
+      Future<?> slow = clients.submit(() -> service.open("alice", "alice", "slow", false));
+      assertTrue(entered.await(5, TimeUnit.SECONDS));
+      assertThrows(IllegalStateException.class, () -> service.open("bob", "bob", "slow", false));
+      Future<Map<String, Object>> fast =
+          clients.submit(() -> service.open("bob", "bob", "healthy", false));
+      assertEquals(false, fast.get(5, TimeUnit.SECONDS).get("autoCommit"));
+      assertFalse(slow.isDone());
+      release.countDown();
+      slow.get(5, TimeUnit.SECONDS);
+    } finally {
+      release.countDown();
+      clients.shutdownNow();
+    }
+  }
+
+  @Test
+  void timedOutOpenReturnsALateConnectionAndDoesNotPublishAWorkspace() throws Exception {
+    System.setProperty("jerry.sql.open.timeout.seconds", "1");
+    CountDownLatch entered = new CountDownLatch(1), release = new CountDownLatch(1);
+    AtomicReference<Connection> late = new AtomicReference<>();
+    installBlockedSource(entered, release, late);
+    try {
+      assertThrows(SQLTimeoutException.class, () -> service.open("alice", "alice", "slow", false));
+      assertEquals(0, entered.getCount());
+      assertTrue(service.list("alice").isEmpty());
+    } finally {
+      release.countDown();
+    }
+    long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+    while ((late.get() == null || !late.get().isClosed()) && System.nanoTime() < deadline)
+      Thread.sleep(10);
+    assertNotNull(late.get());
+    assertTrue(late.get().isClosed());
+    assertTrue(service.list("alice").isEmpty());
+  }
+
+  private void installBlockedSource(
+      CountDownLatch entered, CountDownLatch release, AtomicReference<Connection> acquired)
+      throws Exception {
+    service.close();
+    DataSource blocked =
+        (DataSource)
+            Proxy.newProxyInstance(
+                DataSource.class.getClassLoader(),
+                new Class<?>[] {DataSource.class},
+                (proxy, method, args) -> {
+                  if (!"getConnection".equals(method.getName()))
+                    throw new UnsupportedOperationException();
+                  entered.countDown();
+                  if (!release.await(10, TimeUnit.SECONDS))
+                    throw new SQLException("Test pool not released");
+                  Connection connection = source.getConnection();
+                  acquired.set(connection);
+                  return connection;
+                });
+    service =
+        new SqlService(
+            new Config(),
+            audit,
+            new DataSources() {
+              public List<Map<String, Object>> list() {
+                return Collections.emptyList();
+              }
+
+              public DataSource resolve(String id) {
+                return "slow".equals(id) ? blocked : source;
+              }
+            });
   }
 
   private String open(String owner) throws Exception {

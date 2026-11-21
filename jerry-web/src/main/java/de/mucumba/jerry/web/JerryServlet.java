@@ -449,7 +449,8 @@ public final class JerryServlet extends HttpServlet implements ContainerServlet 
               (int) number(request, "limit", 300, 1, 2000),
               parameter(request, "encoding", "UTF-8"),
               request.getParameter("identity"),
-              request.getParameter("direction")));
+              request.getParameter("direction"),
+              "true".equals(request.getParameter("follow"))));
       return;
     }
     error(response, 404, "API-Endpunkt nicht gefunden.");

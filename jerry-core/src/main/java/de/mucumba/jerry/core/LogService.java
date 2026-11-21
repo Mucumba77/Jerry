@@ -238,13 +238,28 @@ public final class LogService implements AutoCloseable {
   public Map<String, Object> read(
       String id, long cursor, int limit, String encoding, String identity, String direction)
       throws IOException {
+    return read(id, cursor, limit, encoding, identity, direction, false);
+  }
+
+  /** When following a live file, leave an unfinished line for the next read. */
+  public Map<String, Object> read(
+      String id,
+      long cursor,
+      int limit,
+      String encoding,
+      String identity,
+      String direction,
+      boolean follow)
+      throws IOException {
     Path source = resolve(id), file = readable(source);
+    boolean trackLineEnd = source.equals(file) && !"previous".equals(direction);
     Charset charset = charset(encoding);
-    long length = Files.size(file);
     BasicFileAttributes attrs = Files.readAttributes(file, BasicFileAttributes.class);
+    long length = attrs.size();
+    Object fileKey = attrs.fileKey();
+    // Java 8 may report the modification time when the file system has no creation time.
     String currentIdentity =
-        Audit.fingerprint(
-            file + ":" + attrs.creationTime().toMillis() + ":" + String.valueOf(attrs.fileKey()));
+        Audit.fingerprint(file + ":" + (fileKey == null ? attrs.creationTime() : fileKey));
     boolean rotated =
         cursor > length
             || (identity != null && !identity.isEmpty() && !identity.equals(currentIdentity));
@@ -262,6 +277,7 @@ public final class LogService implements AutoCloseable {
         reader.seek(start);
       }
       long end = "previous".equals(direction) ? cursor : length;
+      long unfinishedLine = -1;
       int bytesRead = 0;
       boolean boundary = start == 0;
       if (start > 0) {
@@ -299,7 +315,7 @@ public final class LogService implements AutoCloseable {
       while (reader.getFilePointer() < end && bytesRead < maximumBytes) {
         long position = reader.getFilePointer();
         ByteArrayOutputStream line = new ByteArrayOutputStream();
-        boolean truncated = false;
+        boolean truncated = false, terminated = false, capped = false;
         while (reader.getFilePointer() < length) {
           int a = reader.read();
           if (a < 0) break;
@@ -309,20 +325,32 @@ public final class LogService implements AutoCloseable {
             if (b < 0) break;
             bytesRead++;
             if (("UTF-16LE".equals(encoding) ? a : b) == 10
-                && ("UTF-16LE".equals(encoding) ? b : a) == 0) break;
+                && ("UTF-16LE".equals(encoding) ? b : a) == 0) {
+              terminated = true;
+              break;
+            }
             if (line.size() < 65536) {
               line.write(a);
               line.write(b);
             } else truncated = true;
           } else {
-            if (a == 10) break;
+            if (a == 10) {
+              terminated = true;
+              break;
+            }
             if (line.size() < 65536) line.write(a);
             else truncated = true;
           }
           if (bytesRead > maximumBytes + 1048576) {
             truncated = true;
+            capped = true;
             break;
           }
+        }
+        if (reader.getFilePointer() == position) break;
+        if (trackLineEnd && !terminated && !capped) {
+          unfinishedLine = position;
+          if (follow) break;
         }
         String text = new String(line.toByteArray(), charset).replaceAll("\\r$", "");
         Map<String, Object> row = event(text);
@@ -333,6 +361,7 @@ public final class LogService implements AutoCloseable {
         if (cursor >= 0 && !"previous".equals(direction) && lines.size() >= limit) break;
       }
       long next = reader.getFilePointer();
+      long followCursor = unfinishedLine >= 0 ? unfinishedLine : next;
       if (cursor < 0 || "previous".equals(direction)) {
         if (lines.size() > limit) {
           lines = new ArrayList<>(lines.subList(lines.size() - limit, lines.size()));
@@ -347,7 +376,9 @@ public final class LogService implements AutoCloseable {
           "start",
           start,
           "next",
-          next,
+          follow ? followCursor : next,
+          "followCursor",
+          followCursor,
           "size",
           length,
           "eof",

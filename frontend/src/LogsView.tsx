@@ -110,6 +110,7 @@ export default function LogsView() {
         cursor: String(cursor),
         limit: "500",
         encoding,
+        ...(append ? { follow: "true" } : {}),
         ...(direction ? { direction } : {}),
         ...(pageRef.current?.identity
           ? { identity: pageRef.current.identity }
@@ -118,7 +119,12 @@ export default function LogsView() {
       const next = await api<Row>("/logs/" + selected + "?" + params);
       if (current !== generation.current) return;
       if (append && pageRef.current && !next.rotated) {
-        next.lines = [...pageRef.current.lines, ...next.lines].slice(-2000);
+        const previous = pageRef.current;
+        const cutoff = previous.followCursor ?? previous.next;
+        next.lines = [
+          ...previous.lines.filter((line: Row) => line.offset < cutoff),
+          ...next.lines,
+        ].slice(-2000);
         next.start = next.lines[0]?.offset ?? next.start;
       }
       setPage(next);
@@ -154,7 +160,8 @@ export default function LogsView() {
       timer: number;
     async function tick() {
       if (!alive) return;
-      await load(pageRef.current?.next ?? -1, undefined, true);
+      const current = pageRef.current;
+      await load(current?.followCursor ?? current?.next ?? -1, undefined, true);
       if (alive) timer = window.setTimeout(tick, 2000);
     }
     timer = window.setTimeout(tick, 2000);
